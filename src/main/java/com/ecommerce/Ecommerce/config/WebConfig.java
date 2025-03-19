@@ -16,16 +16,16 @@ public class WebConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")  // Cho phép tất cả các endpoint
                         .allowedOriginPatterns("*")  
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS") // Thêm PATCH
                         .allowedHeaders("*")
                         .allowCredentials(true); // Cho phép gửi thông tin xác thực
             }
+
             @Override
             public void addResourceHandlers(ResourceHandlerRegistry registry) {
                 registry.addResourceHandler("/uploads/**")
                         .addResourceLocations("file:" + System.getProperty("user.dir") + "/uploads/");
             }
-
         };
     }
 }

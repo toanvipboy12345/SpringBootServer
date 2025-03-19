@@ -39,8 +39,7 @@
 //     @Autowired
 //     private CouponService couponService;
 
-
-// @Transactional(rollbackFor = Exception.class)
+//     @Transactional(rollbackFor = Exception.class)
 //     public Order createOrder(String orderId, Long userId, CartDTO cartDTO, Address shippingAddress, 
 //                              String shippingMethodCode, String couponCode, String email, 
 //                              String customerName, String phoneNumber) {
@@ -110,7 +109,9 @@
 //                     discountedTotal = shippingFee;
 //                 }
 //                 couponApplied = true;
-               
+
+//                 // Chỉ thêm userId vào danh sách usedByUsers, không tăng usedCount ở đây
+//                 couponService.addUserToCoupon(appliedCoupon, userId);
 //             } catch (InvalidInputException e) {
 //                 System.out.println("Coupon validation failed: " + e.getMessage());
 //             }
@@ -152,54 +153,50 @@
 //         System.out.println("Order and OrderItems created successfully for orderId: " + orderId);
 //         return savedOrder;
 //     }
+
 //     @Transactional(rollbackFor = Exception.class)
-// public Order updateOrderStatus(String orderId, OrderStatus status) {
-//     Optional<Order> orderOpt = orderRepository.findByOrderId(orderId);
-//     if (!orderOpt.isPresent()) {
-//         throw new InvalidInputException("Order not found for orderId: " + orderId);
-//     }
+//     public Order updateOrderStatus(String orderId, OrderStatus status) {
+//         Optional<Order> orderOpt = orderRepository.findByOrderId(orderId);
+//         if (!orderOpt.isPresent()) {
+//             throw new InvalidInputException("Order not found for orderId: " + orderId);
+//         }
 
-//     Order order = orderOpt.get();
+//         Order order = orderOpt.get();
 
-//     // Tăng usedCount khi status thay đổi thành CONFIRMED và coupon đã được áp dụng
-//     if (status == OrderStatus.CONFIRMED && order.isCouponApplied()) {
-//         double expectedTotalWithoutCoupon = order.getShippingMethod().getShippingFee() +
-//                 order.getItems().stream()
-//                         .mapToDouble(item -> item.getPrice() * item.getQuantity())
-//                         .sum();
-//         if (order.getTotalAmount() < expectedTotalWithoutCoupon) { // Xác nhận coupon đã được áp dụng
-//             // Tìm couponCode dựa trên totalAmount (lấy coupon đầu tiên khớp với discountRate)
-//             List<Coupon> coupons = couponService.getAllCoupons().stream()
-//                     .filter(coupon -> coupon.getStatus() == CouponStatus.ACTIVE)
-//                     .filter(coupon -> {
-//                         double discountAmount = (order.getItems().stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum() * coupon.getDiscountRate()) / 100;
-//                         double expectedDiscountedTotal = order.getItems().stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum() + order.getShippingMethod().getShippingFee() - discountAmount;
-//                         return Math.abs(expectedDiscountedTotal - order.getTotalAmount()) < 0.01; // So sánh với sai số nhỏ
-//                     })
-//                     .toList();
-//             if (!coupons.isEmpty()) {
-//                 Coupon coupon = coupons.get(0); // Lấy coupon đầu tiên khớp (giả định chỉ có một coupon hợp lệ)
-//                 try {
-//                     if (coupon.getUsedCount() < coupon.getMaxUses()) {
-//                         coupon.setUsedCount(coupon.getUsedCount() + 1);
-//                         couponService.updateCoupon(coupon.getId(), coupon);
+//         // Tăng usedCount khi status đổi thành CONFIRMED và coupon đã được áp dụng
+//         if (status == OrderStatus.CONFIRMED && order.isCouponApplied()) {
+//             double expectedTotalWithoutCoupon = order.getShippingMethod().getShippingFee() +
+//                     order.getItems().stream()
+//                             .mapToDouble(item -> item.getPrice() * item.getQuantity())
+//                             .sum();
+//             if (order.getTotalAmount() < expectedTotalWithoutCoupon) { // Xác nhận coupon đã được áp dụng
+//                 // Tìm coupon dựa trên totalAmount
+//                 List<Coupon> coupons = couponService.getAllCoupons().stream()
+//                         .filter(coupon -> coupon.getStatus() == CouponStatus.ACTIVE)
+//                         .filter(coupon -> {
+//                             double discountAmount = (order.getItems().stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum() * coupon.getDiscountRate()) / 100;
+//                             double expectedDiscountedTotal = order.getItems().stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum() + order.getShippingMethod().getShippingFee() - discountAmount;
+//                             return Math.abs(expectedDiscountedTotal - order.getTotalAmount()) < 0.01; // So sánh với sai số nhỏ
+//                         })
+//                         .toList();
+//                 if (!coupons.isEmpty()) {
+//                     Coupon coupon = coupons.get(0); // Lấy coupon đầu tiên khớp
+//                     try {
+//                         // Tăng usedCount (không cần thêm userId vì đã thêm trong createOrder)
+//                         couponService.incrementUsedCount(coupon, null); // Truyền null để không thêm userId lần nữa
 //                         System.out.println("Increased usedCount for coupon " + coupon.getCode() + " to " + coupon.getUsedCount());
-//                     } else {
-//                         throw new InvalidInputException("Coupon " + coupon.getCode() + " has reached maximum uses");
+//                     } catch (InvalidInputException e) {
+//                         System.out.println("Failed to update usedCount: " + e.getMessage());
 //                     }
-//                 } catch (InvalidInputException e) {
-//                     System.out.println("Failed to update usedCount: " + e.getMessage());
-//                     // Không throw exception, chỉ log lỗi
+//                 } else {
+//                     System.out.println("No valid coupon found for orderId: " + orderId);
 //                 }
-//             } else {
-//                 System.out.println("No valid coupon found for orderId: " + orderId);
 //             }
 //         }
-//     }
 
-//     order.setStatus(status);
-//     return orderRepository.save(order);
-// }
+//         order.setStatus(status);
+//         return orderRepository.save(order);
+//     }
 
 //     @Transactional(rollbackFor = Exception.class)
 //     public Order linkPaymentToOrder(String orderId, Payment payment) {
@@ -211,7 +208,6 @@
 //         Order order = orderOpt.get();
 //         order.setPayment(payment);
 
-
 //         return orderRepository.save(order);
 //     }
 
@@ -222,12 +218,21 @@
 //     public List<Order> getOrdersByUserId(Long userId) {
 //         return orderRepository.findByUserId(userId);
 //     }
+//     public List<Order> getOrdersByCartToken(String cartToken) {
+//         if (cartToken == null || cartToken.trim().isEmpty()) {
+//             throw new InvalidInputException("Cart token is required");
+//         }
+//         return orderRepository.findByCartToken(cartToken);
+//     }
 // }
 package com.ecommerce.Ecommerce.service;
 
 import com.ecommerce.Ecommerce.exception.InvalidInputException;
 import com.ecommerce.Ecommerce.model.*;
 import com.ecommerce.Ecommerce.model.dto.CartDTO;
+import com.ecommerce.Ecommerce.model.dto.InvoiceDTO;
+import com.ecommerce.Ecommerce.model.dto.InvoiceDTO.AddressDTO;
+import com.ecommerce.Ecommerce.model.dto.InvoiceDTO.InvoiceItemDTO;
 import com.ecommerce.Ecommerce.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -235,6 +240,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -262,6 +268,11 @@ public class OrderService {
 
     @Autowired
     private CouponService couponService;
+    public List<InvoiceDTO> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(this::mapToInvoiceDTO)
+                .collect(Collectors.toList());
+    }
 
     @Transactional(rollbackFor = Exception.class)
     public Order createOrder(String orderId, Long userId, CartDTO cartDTO, Address shippingAddress, 
@@ -316,7 +327,7 @@ public class OrderService {
         Coupon appliedCoupon = null;
         if (couponCode != null && !couponCode.trim().isEmpty()) {
             try {
-                appliedCoupon = couponService.validateCoupon(couponCode.trim(), userId); // Truyền userId
+                appliedCoupon = couponService.validateCoupon(couponCode.trim(), userId);
                 int discountRate = appliedCoupon.getDiscountRate();
 
                 boolean hasDiscountedProducts = cartDTO.getItems().stream()
@@ -334,14 +345,12 @@ public class OrderService {
                 }
                 couponApplied = true;
 
-                // Chỉ thêm userId vào danh sách usedByUsers, không tăng usedCount ở đây
                 couponService.addUserToCoupon(appliedCoupon, userId);
             } catch (InvalidInputException e) {
                 System.out.println("Coupon validation failed: " + e.getMessage());
             }
         }
 
-        // Tạo Order với cartToken từ CartDTO
         Order order = new Order(orderId, user, cartDTO.getCartToken(), discountedTotal, shippingAddress, 
                                 shippingMethod, email, customerName, phoneNumber);
         order.setStatus(OrderStatus.PENDING);
@@ -379,7 +388,7 @@ public class OrderService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Order updateOrderStatus(String orderId, OrderStatus status) {
+    public InvoiceDTO updateOrderStatus(String orderId, OrderStatus status) {
         Optional<Order> orderOpt = orderRepository.findByOrderId(orderId);
         if (!orderOpt.isPresent()) {
             throw new InvalidInputException("Order not found for orderId: " + orderId);
@@ -387,27 +396,39 @@ public class OrderService {
 
         Order order = orderOpt.get();
 
+        // Kiểm tra trạng thái hợp lệ
+        if (status == OrderStatus.CONFIRMED && order.getStatus() != OrderStatus.PENDING) {
+            throw new InvalidInputException("Order can only be confirmed from PENDING status");
+        }
+        if (status == OrderStatus.SHIPPED && order.getStatus() != OrderStatus.CONFIRMED) {
+            throw new InvalidInputException("Order can only be shipped from CONFIRMED status");
+        }
+        if (status == OrderStatus.DELIVERED && order.getStatus() != OrderStatus.SHIPPED) {
+            throw new InvalidInputException("Order can only be delivered from SHIPPED status");
+        }
+        if (status == OrderStatus.CANCELLED && order.getStatus() == OrderStatus.DELIVERED) {
+            throw new InvalidInputException("Delivered order cannot be cancelled");
+        }
+
         // Tăng usedCount khi status đổi thành CONFIRMED và coupon đã được áp dụng
         if (status == OrderStatus.CONFIRMED && order.isCouponApplied()) {
             double expectedTotalWithoutCoupon = order.getShippingMethod().getShippingFee() +
                     order.getItems().stream()
                             .mapToDouble(item -> item.getPrice() * item.getQuantity())
                             .sum();
-            if (order.getTotalAmount() < expectedTotalWithoutCoupon) { // Xác nhận coupon đã được áp dụng
-                // Tìm coupon dựa trên totalAmount
+            if (order.getTotalAmount() < expectedTotalWithoutCoupon) {
                 List<Coupon> coupons = couponService.getAllCoupons().stream()
                         .filter(coupon -> coupon.getStatus() == CouponStatus.ACTIVE)
                         .filter(coupon -> {
                             double discountAmount = (order.getItems().stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum() * coupon.getDiscountRate()) / 100;
                             double expectedDiscountedTotal = order.getItems().stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum() + order.getShippingMethod().getShippingFee() - discountAmount;
-                            return Math.abs(expectedDiscountedTotal - order.getTotalAmount()) < 0.01; // So sánh với sai số nhỏ
+                            return Math.abs(expectedDiscountedTotal - order.getTotalAmount()) < 0.01;
                         })
                         .toList();
                 if (!coupons.isEmpty()) {
-                    Coupon coupon = coupons.get(0); // Lấy coupon đầu tiên khớp
+                    Coupon coupon = coupons.get(0);
                     try {
-                        // Tăng usedCount (không cần thêm userId vì đã thêm trong createOrder)
-                        couponService.incrementUsedCount(coupon, null); // Truyền null để không thêm userId lần nữa
+                        couponService.incrementUsedCount(coupon, null);
                         System.out.println("Increased usedCount for coupon " + coupon.getCode() + " to " + coupon.getUsedCount());
                     } catch (InvalidInputException e) {
                         System.out.println("Failed to update usedCount: " + e.getMessage());
@@ -419,7 +440,8 @@ public class OrderService {
         }
 
         order.setStatus(status);
-        return orderRepository.save(order);
+        Order updatedOrder = orderRepository.save(order);
+        return mapToInvoiceDTO(updatedOrder);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -439,7 +461,74 @@ public class OrderService {
         return orderRepository.findByOrderId(orderId);
     }
 
-    public List<Order> getOrdersByUserId(Long userId) {
-        return orderRepository.findByUserId(userId);
+    public List<InvoiceDTO> getOrdersByUserId(Long userId) {
+        return orderRepository.findByUserId(userId).stream()
+                .map(this::mapToInvoiceDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<InvoiceDTO> getOrdersByCartToken(String cartToken) {
+        if (cartToken == null || cartToken.trim().isEmpty()) {
+            throw new InvalidInputException("Cart token is required");
+        }
+        return orderRepository.findByCartToken(cartToken).stream()
+                .map(this::mapToInvoiceDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Phương thức ánh xạ từ Order sang InvoiceDTO
+    public InvoiceDTO mapToInvoiceDTO(Order order) {
+        if (order == null) {
+            throw new InvalidInputException("Order is null");
+        }
+
+        Payment payment = order.getPayment();
+        PaymentMethod paymentMethod = (payment != null) ? payment.getPaymentMethod() : null;
+        PaymentStatus paymentStatus = (payment != null) ? payment.getStatus() : null;
+
+        AddressDTO shippingAddressDTO = new AddressDTO(
+            order.getShippingAddress().getStreet(),
+            order.getShippingAddress().getWard(),
+            order.getShippingAddress().getDistrict(),
+            order.getShippingAddress().getCity(),
+            order.getShippingAddress().getCountry()
+        );
+
+        List<InvoiceItemDTO> items = order.getItems().stream().map(item -> {
+            return new InvoiceItemDTO(
+                item.getProduct().getId(),
+                item.getProduct().getName(),
+                item.getVariant().getColor(),
+                item.getSize().getSize(),
+                item.getQuantity(),
+                item.getPrice(),
+                item.getVariant().getMainImage() // Thêm mainImage từ ProductVariant
+            );
+        }).collect(Collectors.toList());
+
+        String customerIdentifier = order.getCartToken() != null ? order.getCartToken() 
+                : (order.getUser() != null ? order.getUser().getId().toString() : null);
+
+        InvoiceDTO invoiceDTO = new InvoiceDTO(
+            order.getOrderId(),
+            customerIdentifier,
+            order.getCustomerName(),
+            order.getEmail(),
+            order.getPhoneNumber(),
+            shippingAddressDTO,
+            order.getShippingMethod().getName(),
+            order.getTotalAmount(),
+            order.getShippingMethod().getShippingFee(),
+            paymentMethod,
+            paymentStatus,
+            order.getStatus(),
+            items
+        );
+
+        // Gán createdAt và updatedAt từ Order (do InvoiceDTO extends Auditable)
+        invoiceDTO.setCreatedAt(order.getCreatedAt());
+        invoiceDTO.setUpdatedAt(order.getUpdatedAt());
+
+        return invoiceDTO;
     }
 }

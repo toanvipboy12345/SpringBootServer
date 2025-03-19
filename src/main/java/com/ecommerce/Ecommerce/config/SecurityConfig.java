@@ -2,12 +2,7 @@
 package com.ecommerce.Ecommerce.config;
 
 import com.ecommerce.Ecommerce.service.UserService;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.StreamWriteConstraints;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.SerializationFeature;
+
 import com.ecommerce.Ecommerce.model.User;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -82,19 +77,18 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:3000")); // Thay thế bằng domain của bạn
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Các phương thức HTTP
-        configuration.setAllowedHeaders(List.of("*")); // Cho phép tất cả các header
-        configuration.setAllowCredentials(true); // Cho phép gửi thông tin xác thực
-        // Thêm các headers phản hồi
-        configuration.addExposedHeader("Access-Control-Allow-Origin");
-        configuration.addExposedHeader("Access-Control-Allow-Credentials");
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(List.of("http://localhost:3000")); // Chỉ định rõ origin
+    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")); // Thêm PATCH
+    configuration.setAllowedHeaders(List.of("*")); // Cho phép tất cả các header
+    configuration.setAllowCredentials(true); // Cho phép gửi thông tin xác thực
+    // Thêm các headers phản hồi
+    configuration.addExposedHeader("Access-Control-Allow-Origin");
+    configuration.addExposedHeader("Access-Control-Allow-Credentials");
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+}
 
 }

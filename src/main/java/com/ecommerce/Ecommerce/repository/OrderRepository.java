@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByOrderId(String orderId);
     List<Order> findByUserId(Long userId);
+    List<Order> findByCartToken(String cartToken); // Thêm phương thức tìm theo cartToken
 }

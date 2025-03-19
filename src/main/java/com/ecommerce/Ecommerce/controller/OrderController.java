@@ -26,7 +26,9 @@
 //         private Address shippingAddress;
 //         private String shippingMethodCode;
 //         private String couponCode;
-//         private String email; // Thêm trường email
+//         private String email;
+//         private String customerName; // Thêm trường customerName
+//         private String phoneNumber;  // Thêm trường phoneNumber
 
 //         // Getters and Setters
 //         public String getOrderId() { return orderId; }
@@ -41,8 +43,12 @@
 //         public void setShippingMethodCode(String shippingMethodCode) { this.shippingMethodCode = shippingMethodCode; }
 //         public String getCouponCode() { return couponCode; }
 //         public void setCouponCode(String couponCode) { this.couponCode = couponCode; }
-//         public String getEmail() { return email; } // Getter cho email
-//         public void setEmail(String email) { this.email = email; } // Setter cho email
+//         public String getEmail() { return email; }
+//         public void setEmail(String email) { this.email = email; }
+//         public String getCustomerName() { return customerName; } // Getter cho customerName
+//         public void setCustomerName(String customerName) { this.customerName = customerName; } // Setter cho customerName
+//         public String getPhoneNumber() { return phoneNumber; } // Getter cho phoneNumber
+//         public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; } // Setter cho phoneNumber
 //     }
 
 //     @PostMapping("/create")
@@ -54,7 +60,9 @@
 //             request.getShippingAddress(),
 //             request.getShippingMethodCode(),
 //             request.getCouponCode(),
-//             request.getEmail() // Truyền email vào service
+//             request.getEmail(),
+//             request.getCustomerName(), // Truyền customerName vào service
+//             request.getPhoneNumber()   // Truyền phoneNumber vào service
 //         );
 //         Map<String, String> response = Map.of("orderId", order.getOrderId());
 //         return ResponseEntity.ok(response);
@@ -72,12 +80,22 @@
 //         List<Order> orders = orderService.getOrdersByUserId(userId);
 //         return ResponseEntity.ok(orders);
 //     }
+//     @GetMapping("/cart-token/{cartToken}")
+//     public ResponseEntity<List<Order>> getOrdersByCartToken(@PathVariable String cartToken) {
+//         List<Order> orders = orderService.getOrdersByCartToken(cartToken);
+//         if (orders.isEmpty()) {
+//             return ResponseEntity.notFound().build();
+//         }
+//         return ResponseEntity.ok(orders);
+//     }
 // }
 package com.ecommerce.Ecommerce.controller;
 
 import com.ecommerce.Ecommerce.model.Address;
 import com.ecommerce.Ecommerce.model.Order;
+import com.ecommerce.Ecommerce.model.OrderStatus;
 import com.ecommerce.Ecommerce.model.dto.CartDTO;
+import com.ecommerce.Ecommerce.model.dto.InvoiceDTO;
 import com.ecommerce.Ecommerce.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -100,9 +118,9 @@ public class OrderController {
         private Address shippingAddress;
         private String shippingMethodCode;
         private String couponCode;
+        private String customerName;
+        private String phoneNumber;
         private String email;
-        private String customerName; // Thêm trường customerName
-        private String phoneNumber;  // Thêm trường phoneNumber
 
         // Getters and Setters
         public String getOrderId() { return orderId; }
@@ -119,11 +137,24 @@ public class OrderController {
         public void setCouponCode(String couponCode) { this.couponCode = couponCode; }
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
-        public String getCustomerName() { return customerName; } // Getter cho customerName
-        public void setCustomerName(String customerName) { this.customerName = customerName; } // Setter cho customerName
-        public String getPhoneNumber() { return phoneNumber; } // Getter cho phoneNumber
-        public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; } // Setter cho phoneNumber
+        public String getCustomerName() { return customerName; }
+        public void setCustomerName(String customerName) { this.customerName = customerName; }
+        public String getPhoneNumber() { return phoneNumber; }
+        public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     }
+
+    public static class UpdateStatusRequestDTO {
+        private OrderStatus status;
+
+        // Getters and Setters
+        public OrderStatus getStatus() { return status; }
+        public void setStatus(OrderStatus status) { this.status = status; }
+    }
+    @GetMapping
+public ResponseEntity<List<InvoiceDTO>> getAllOrders() {
+    List<InvoiceDTO> orders = orderService.getAllOrders();
+    return ResponseEntity.ok(orders);
+}
 
     @PostMapping("/create")
     public ResponseEntity<Map<String, String>> createOrder(@RequestBody OrderRequestDTO request) {
@@ -135,23 +166,38 @@ public class OrderController {
             request.getShippingMethodCode(),
             request.getCouponCode(),
             request.getEmail(),
-            request.getCustomerName(), // Truyền customerName vào service
-            request.getPhoneNumber()   // Truyền phoneNumber vào service
+            request.getCustomerName(),
+            request.getPhoneNumber()
         );
         Map<String, String> response = Map.of("orderId", order.getOrderId());
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<Order> getOrderByOrderId(@PathVariable String orderId) {
+    public ResponseEntity<InvoiceDTO> getOrderByOrderId(@PathVariable String orderId) {
         return orderService.getOrderByOrderId(orderId)
-                .map(ResponseEntity::ok)
+                .map(order -> ResponseEntity.ok(orderService.mapToInvoiceDTO(order)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Order>> getOrdersByUserId(@PathVariable Long userId) {
-        List<Order> orders = orderService.getOrdersByUserId(userId);
-        return ResponseEntity.ok(orders);
+    public ResponseEntity<List<InvoiceDTO>> getOrdersByUserId(@PathVariable Long userId) {
+        List<InvoiceDTO> invoiceDTOs = orderService.getOrdersByUserId(userId);
+        return ResponseEntity.ok(invoiceDTOs);
+    }
+
+    @GetMapping("/cart-token/{cartToken}")
+    public ResponseEntity<List<InvoiceDTO>> getOrdersByCartToken(@PathVariable String cartToken) {
+        List<InvoiceDTO> invoiceDTOs = orderService.getOrdersByCartToken(cartToken);
+        if (invoiceDTOs.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(invoiceDTOs);
+    }
+
+    @PutMapping("/{orderId}/status")
+    public ResponseEntity<InvoiceDTO> updateOrderStatus(@PathVariable String orderId, @RequestBody UpdateStatusRequestDTO request) {
+        InvoiceDTO updatedOrder = orderService.updateOrderStatus(orderId, request.getStatus());
+        return ResponseEntity.ok(updatedOrder);
     }
 }

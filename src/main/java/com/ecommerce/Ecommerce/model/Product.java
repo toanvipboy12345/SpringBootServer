@@ -30,9 +30,6 @@ public class Product extends Auditable {
     @JsonManagedReference
     private List<ProductVariant> variants = new ArrayList<>();
 
-    @Column(name = "import_price", nullable = false)
-    private Double importPrice; // Giá nhập hàng
-
     @Column(nullable = false)
     private Double price; // Giá gốc chung
 
@@ -52,14 +49,13 @@ public class Product extends Auditable {
 
     // All-args constructor
     public Product(Long id, String code, Long brandId, Long categoryId, String name, List<ProductVariant> variants,
-            Double importPrice, Double price, Double discountPrice, Integer discountRate, String description) {
+            Double price, Double discountPrice, Integer discountRate, String description) {
         this.id = id;
         this.code = code;
         this.brandId = brandId;
         this.categoryId = categoryId;
         this.name = name;
         this.variants = variants != null ? variants : new ArrayList<>();
-        this.importPrice = importPrice;
         this.price = price;
         this.discountPrice = discountPrice;
         this.discountRate = discountRate;
@@ -113,14 +109,6 @@ public class Product extends Auditable {
 
     public void setVariants(List<ProductVariant> variants) {
         this.variants = variants;
-    }
-
-    public Double getImportPrice() {
-        return importPrice;
-    }
-
-    public void setImportPrice(Double importPrice) {
-        this.importPrice = importPrice;
     }
 
     public Double getPrice() {
