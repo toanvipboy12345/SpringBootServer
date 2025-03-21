@@ -15,10 +15,11 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")  // Cho phép tất cả các endpoint
-                        .allowedOriginPatterns("*")  
-                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS") // Thêm PATCH
+                        .allowedOriginPatterns("http://localhost:3000")  // Chỉ định rõ origin
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS") // Bao gồm PATCH và OPTIONS
                         .allowedHeaders("*")
-                        .allowCredentials(true); // Cho phép gửi thông tin xác thực
+                        .allowCredentials(true) // Cho phép gửi thông tin xác thực
+                        .exposedHeaders("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"); // Thêm exposed headers
             }
 
             @Override

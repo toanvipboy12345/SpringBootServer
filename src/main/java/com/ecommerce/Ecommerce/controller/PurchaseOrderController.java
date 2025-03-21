@@ -1,5 +1,6 @@
 package com.ecommerce.Ecommerce.controller;
 
+import com.ecommerce.Ecommerce.annotation.RequireAdminRole;
 import com.ecommerce.Ecommerce.model.PurchaseOrder;
 import com.ecommerce.Ecommerce.model.dto.PurchaseOrderDTO;
 import com.ecommerce.Ecommerce.service.PurchaseOrderService;
@@ -39,6 +40,7 @@ public class PurchaseOrderController {
 
     // Tạo phiếu nhập hàng mới
     @PostMapping
+    @RequireAdminRole(roles = {"super_admin", "product_manager"})
     public ResponseEntity<PurchaseOrder> createPurchaseOrder(@RequestBody PurchaseOrder purchaseOrder) {
         try {
             PurchaseOrder createdPurchaseOrder = purchaseOrderService.createPurchaseOrder(purchaseOrder);
@@ -50,6 +52,7 @@ public class PurchaseOrderController {
 
     // Xác nhận phiếu nhập hàng
     @PatchMapping("/{id}/confirm")
+    @RequireAdminRole(roles = {"super_admin", "product_manager"})
     public ResponseEntity<PurchaseOrder> confirmPurchaseOrder(@PathVariable Long id) {
         try {
             PurchaseOrder confirmedPurchaseOrder = purchaseOrderService.confirmPurchaseOrder(id);
@@ -61,6 +64,7 @@ public class PurchaseOrderController {
 
     // Hủy phiếu nhập hàng
     @PatchMapping("/{id}/cancel")
+    @RequireAdminRole(roles = {"super_admin", "product_manager"})
     public ResponseEntity<PurchaseOrder> cancelPurchaseOrder(@PathVariable Long id) {
         try {
             PurchaseOrder cancelledPurchaseOrder = purchaseOrderService.cancelPurchaseOrder(id);
