@@ -14,4 +14,5 @@ public interface BrandRepository extends JpaRepository<Brand, Long> {
 
     // Tìm kiếm thương hiệu theo tên chứa chuỗi tìm kiếm, không phân biệt chữ hoa/chữ thường
     List<Brand> findByNameContainingIgnoreCase(String name);
+    long count();
 }

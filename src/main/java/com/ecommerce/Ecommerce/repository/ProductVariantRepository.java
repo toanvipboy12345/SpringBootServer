@@ -14,4 +14,5 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     Page<ProductVariant> findAll(Specification<ProductVariant> spec, Pageable pageable);
     
     List<ProductVariant> findAll(Specification<ProductVariant> spec);
+    long count();
 }

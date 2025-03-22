@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface ShippingMethodRepository extends JpaRepository<ShippingMethod, Long> {
     Optional<ShippingMethod> findByCode(String code);
+    long count();
 }

@@ -12,4 +12,5 @@ import org.springframework.stereotype.Repository;
 public interface VariantSizeRepository extends JpaRepository<VariantSize, Long> {
     // Không cần decreaseQuantity nếu chỉ kiểm tra tồn kho
     Optional<VariantSize> findByVariantAndSize(ProductVariant variant, String size);
+    long count();
 }
