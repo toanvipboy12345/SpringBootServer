@@ -5,6 +5,8 @@ import com.ecommerce.Ecommerce.model.OrderStatus;
 import com.ecommerce.Ecommerce.model.dto.RevenueDTO;
 import com.ecommerce.Ecommerce.model.dto.RevenueDetailDTO;
 import com.ecommerce.Ecommerce.model.dto.SupplierTransactionStatsDTO;
+import com.ecommerce.Ecommerce.model.dto.TopProductRevenueDTO;
+import com.ecommerce.Ecommerce.model.dto.TopVariantRevenueDTO;
 import com.ecommerce.Ecommerce.repository.OrderRepository;
 import com.ecommerce.Ecommerce.repository.PurchaseOrderRepository;
 import com.ecommerce.Ecommerce.repository.BrandRepository;
@@ -37,6 +39,10 @@ public class StatisticsService {
                 return calculateRevenueByPaymentMethod(startDate, endDate);
             case "suppliertransactions":
                 return calculateSupplierTransactions(startDate, endDate);
+            case "topproducts": // Thêm case cho top sản phẩm
+                return calculateTopProductsByRevenue(startDate, endDate);
+            case "topvariants": // Thêm case cho top biến thể
+                return calculateTopVariantsByRevenue(startDate, endDate);
             default:
                 throw new IllegalArgumentException("Invalid type: " + type);
         }
@@ -141,5 +147,41 @@ public class StatisticsService {
         }
 
         return stats;
+    }
+
+    // Thêm phương thức tính toán Top 10 sản phẩm có doanh thu cao nhất
+    private List<TopProductRevenueDTO> calculateTopProductsByRevenue(LocalDateTime startDate, LocalDateTime endDate) {
+        List<Object[]> results = orderRepository.findTopProductsByRevenue(startDate, endDate);
+        List<TopProductRevenueDTO> topProducts = new ArrayList<>();
+
+        for (Object[] result : results) {
+            Long productId = ((Number) result[0]).longValue();
+            String productName = (String) result[1];
+            Double revenue = ((Number) result[2]).doubleValue();
+
+            topProducts.add(new TopProductRevenueDTO(productId, productName, revenue));
+        }
+
+        return topProducts;
+    }
+
+    // Thêm phương thức tính toán Top 10 biến thể sản phẩm có doanh thu cao nhất
+    private List<TopVariantRevenueDTO> calculateTopVariantsByRevenue(LocalDateTime startDate, LocalDateTime endDate) {
+        List<Object[]> results = orderRepository.findTopVariantsByRevenue(startDate, endDate);
+        List<TopVariantRevenueDTO> topVariants = new ArrayList<>();
+
+        for (Object[] result : results) {
+            Long productId = ((Number) result[0]).longValue();
+            Long variantId = ((Number) result[1]).longValue();
+            String name = (String) result[2];
+            Double price = (Double) result[3];
+            Double discountPrice = (Double) result[4];
+            String mainImage = (String) result[5];
+            Double revenue = ((Number) result[6]).doubleValue();
+
+            topVariants.add(new TopVariantRevenueDTO(productId, variantId, name, price, discountPrice, mainImage, revenue));
+        }
+
+        return topVariants;
     }
 }

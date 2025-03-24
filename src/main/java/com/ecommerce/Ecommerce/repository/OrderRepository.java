@@ -74,4 +74,26 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
            "WHERE o.status = 'DELIVERED' AND o.createdAt BETWEEN :startDate AND :endDate " +
            "GROUP BY p.paymentMethod")
     List<Object[]> findRevenueByPaymentMethod(LocalDateTime startDate, LocalDateTime endDate);
+    // Thống kê doanh thu theo sản phẩm
+    @Query("SELECT oi.product.id, oi.product.name, SUM(oi.price * oi.quantity) as revenue " +
+           "FROM OrderItem oi " +
+           "WHERE oi.order.status = 'DELIVERED' " +
+           "AND oi.order.createdAt BETWEEN :startDate AND :endDate " +
+           "GROUP BY oi.product.id, oi.product.name " +
+           "ORDER BY revenue DESC " +
+           "LIMIT 10")
+    List<Object[]> findTopProductsByRevenue(@Param("startDate") LocalDateTime startDate,
+                                            @Param("endDate") LocalDateTime endDate);
+       // Truy vấn doanh thu theo biến thể sản phẩm (Top 10 biến thể)
+    @Query("SELECT oi.product.id, oi.variant.id, CONCAT(oi.product.name, ' - ', oi.variant.color) as name, " +
+    "oi.product.price, oi.product.discountPrice, oi.variant.mainImage, SUM(oi.price * oi.quantity) as revenue " +
+    "FROM OrderItem oi " +
+    "WHERE oi.order.status = 'DELIVERED' " +
+    "AND oi.order.createdAt BETWEEN :startDate AND :endDate " +
+    "GROUP BY oi.product.id, oi.variant.id, oi.product.name, oi.variant.color, " +
+    "oi.product.price, oi.product.discountPrice, oi.variant.mainImage " +
+    "ORDER BY revenue DESC " +
+    "LIMIT 10")
+List<Object[]> findTopVariantsByRevenue(@Param("startDate") LocalDateTime startDate,
+                                     @Param("endDate") LocalDateTime endDate);
 }
