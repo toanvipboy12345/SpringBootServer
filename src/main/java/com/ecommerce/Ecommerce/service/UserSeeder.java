@@ -111,21 +111,5 @@ public class UserSeeder implements CommandLineRunner {
             }
         }
 
-        // Seeding một tài khoản user thông thường để kiểm tra
-        if (userRepository.findByUsername("user123").isEmpty()) {
-            User user = new User();
-            user.setUsername("user123");
-            user.setPassword(passwordEncoder.encode("123456"));
-            user.setRole("user");
-            user.setEmail("user123@example.com");
-            user.setFirstName("Regular");
-            user.setLastName("User");
-            user.setIsActive(true);
-
-            userRepository.save(user);
-            System.out.println("Seeded regular user: user123");
-        } else {
-            System.out.println("Regular user 'user123' already exists.");
-        }
     }
 }

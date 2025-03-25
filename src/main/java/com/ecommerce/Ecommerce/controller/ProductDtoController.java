@@ -3,13 +3,8 @@ package com.ecommerce.Ecommerce.controller;
 import com.ecommerce.Ecommerce.model.dto.ProductCardDTO;
 import com.ecommerce.Ecommerce.model.dto.ProductCardResponseDTO;
 import com.ecommerce.Ecommerce.model.dto.ProductDetailDTO;
-import com.ecommerce.Ecommerce.model.Brand;
-import com.ecommerce.Ecommerce.model.Category;
-import com.ecommerce.Ecommerce.model.Product;
-import com.ecommerce.Ecommerce.model.ProductVariant;
-import com.ecommerce.Ecommerce.repository.BrandRepository;
-import com.ecommerce.Ecommerce.repository.CategoryRepository;
-import com.ecommerce.Ecommerce.repository.ProductVariantRepository;
+import com.ecommerce.Ecommerce.model.*;
+import com.ecommerce.Ecommerce.repository.*;
 import com.ecommerce.Ecommerce.service.ProductDtoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.persistence.criteria.*;
 
 import java.util.ArrayList;
+import java.util.Collections; // Thêm import này
 import java.util.List;
 
 @RestController
@@ -40,7 +36,6 @@ public class ProductDtoController {
     @Autowired
     private BrandRepository brandRepository;
 
-
     @GetMapping("/cards")
     public ResponseEntity<ProductCardResponseDTO> getProductCards(
             @RequestParam(defaultValue = "0") int page,
@@ -49,7 +44,7 @@ public class ProductDtoController {
             @RequestParam(required = false) String brand,
             @RequestParam(required = false) Double priceMin,
             @RequestParam(required = false) Double priceMax,
-            @RequestParam(required = false, defaultValue = "") String sort) { // Mặc định sort là rỗng
+            @RequestParam(required = false, defaultValue = "") String sort) {
 
         Pageable pageable = PageRequest.of(page, size);
 
@@ -78,25 +73,18 @@ public class ProductDtoController {
                     predicates.add(cb.lessThanOrEqualTo(productJoin.get("price"), priceMax));
                 }
 
-                // Thêm sắp xếp vào query
-                if ("price_asc".equals(sort)) {
-                    query.orderBy(cb.asc(productJoin.get("price")));
-                } else if ("price_desc".equals(sort)) {
-                    query.orderBy(cb.desc(productJoin.get("price")));
-                } else if ("created_at_asc".equals(sort)) { // Sắp xếp theo thời gian tạo của Product (tăng dần)
-                    query.orderBy(cb.asc(productJoin.get("createdAt")));
-                } else if ("created_at_desc".equals(sort)) { // Sắp xếp theo thời gian tạo của Product (giảm dần)
-                    query.orderBy(cb.desc(productJoin.get("createdAt")));
-                }
-
+                // Không áp dụng sắp xếp ở đây, để service xử lý theo logic hiện tại
                 return cb.and(predicates.toArray(new Predicate[0]));
             }
         };
 
         Page<ProductVariant> variants = productVariantRepository.findAll(spec, pageable);
 
-        List<ProductCardDTO> dtos = productDtoService.getProductCards(page, size, category, brand, priceMin, priceMax,
-                sort);
+        // Gọi service để lấy danh sách DTO (vẫn giữ logic sắp xếp trong service)
+        List<ProductCardDTO> dtos = productDtoService.getProductCards(page, size, category, brand, priceMin, priceMax, sort);
+
+        // Trộn ngẫu nhiên danh sách DTO
+        Collections.shuffle(dtos);
 
         ProductCardResponseDTO response = new ProductCardResponseDTO(dtos, variants.getTotalElements());
 
@@ -110,11 +98,11 @@ public class ProductDtoController {
         ProductDetailDTO dto = productDtoService.getProductDetail(id, variantId);
         return ResponseEntity.ok(dto);
     }
+
     @GetMapping("/search")
     public ResponseEntity<List<ProductCardDTO>> searchProductCards(
             @RequestParam String keyword) {
         List<ProductCardDTO> dtos = productDtoService.searchProductCards(keyword);
         return ResponseEntity.ok(dtos);
     }
-    
 }
