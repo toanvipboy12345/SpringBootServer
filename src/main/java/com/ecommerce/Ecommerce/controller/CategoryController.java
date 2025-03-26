@@ -1,5 +1,6 @@
 package com.ecommerce.Ecommerce.controller;
 
+import com.ecommerce.Ecommerce.annotation.RequireAdminRole;
 import com.ecommerce.Ecommerce.exception.InvalidInputException;
 import com.ecommerce.Ecommerce.model.Category;
 import com.ecommerce.Ecommerce.service.CategoryService;
@@ -71,6 +72,8 @@ public class CategoryController {
      * @return danh mục đã được tạo, hoặc thông báo lỗi nếu dữ liệu không hợp lệ
      */
     @PostMapping
+        @RequireAdminRole(roles = {"super_admin", "product_manager"})
+
     public ResponseEntity<?> createCategory(@RequestBody Category category) {
         try {
             Category createdCategory = categoryService.create(category);
@@ -81,6 +84,8 @@ public class CategoryController {
     }
 
     @PostMapping("/multi")
+    @RequireAdminRole(roles = {"super_admin", "product_manager"})
+
     public ResponseEntity<?> createCategories(@RequestBody List<Category> categories) {
         try {
             List<Category> createdCategories = categoryService.createCategories(categories);
@@ -99,6 +104,8 @@ public class CategoryController {
      *         lệ
      */
     @PutMapping("/{id}")
+    @RequireAdminRole(roles = {"super_admin", "product_manager"})
+
     public ResponseEntity<?> updateCategory(@PathVariable Long id, @RequestBody Category category) {
         try {
             Category updatedCategory = categoryService.update(id, category);
@@ -117,6 +124,8 @@ public class CategoryController {
      * @return mã phản hồi 204 nếu xóa thành công, hoặc mã lỗi nếu ID không hợp lệ
      */
     @DeleteMapping("/{id}")
+    @RequireAdminRole(roles = {"super_admin", "product_manager"})
+
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         try {
             categoryService.delete(id);

@@ -70,7 +70,7 @@ public class UserSeeder implements CommandLineRunner {
             {"ordermanager", "ordermanager@example.com", "order_manager"},
             {"marketingmanager", "marketingmanager@example.com", "marketing_manager"},
             {"customersupport", "customersupport@example.com", "customer_support"},
-            {"analyticsmanager", "analyticsmanager@example.com", "analytics_manager"}
+            {"blogmanager", "blogmanager@example.com", "blog_manager"} // Thêm Blog Manager
         };
 
         // Seeding từng tài khoản admin

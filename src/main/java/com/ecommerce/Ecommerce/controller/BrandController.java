@@ -1,5 +1,6 @@
 package com.ecommerce.Ecommerce.controller;
 
+import com.ecommerce.Ecommerce.annotation.RequireAdminRole;
 import com.ecommerce.Ecommerce.model.Brand;
 import com.ecommerce.Ecommerce.service.BrandService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,6 +49,8 @@ public class BrandController {
      * Tạo một thương hiệu mới cùng với hình ảnh (nếu có).
      */
     @PostMapping(value = "/post", consumes = "multipart/form-data")
+        @RequireAdminRole(roles = {"super_admin", "product_manager"})
+
     public ResponseEntity<?> createBrand(
             @RequestPart("brand") String brandJson,
             @RequestPart(value = "image", required = false) MultipartFile image) {
@@ -66,6 +69,8 @@ public class BrandController {
      * Cập nhật thông tin một thương hiệu cùng với hình ảnh (nếu có).
      */
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    @RequireAdminRole(roles = {"super_admin", "product_manager"})
+
     public ResponseEntity<?> updateBrand(
             @PathVariable Long id,
             @RequestPart("brand") String brandJson,
@@ -85,6 +90,8 @@ public class BrandController {
      * Xóa một thương hiệu dựa trên ID.
      */
     @DeleteMapping("/{id}")
+    @RequireAdminRole(roles = {"super_admin", "product_manager"})
+
     public ResponseEntity<Void> deleteBrand(@PathVariable Long id) {
         try {
             brandService.deleteBrand(id);
