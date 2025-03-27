@@ -13,6 +13,8 @@ public class StatsDTO {
     private long totalSuppliers;         // Tổng số nhà cung cấp
     private long totalShippingMethods;   // Tổng số phương thức vận chuyển
     private long totalCoupons;           // Tổng số mã giảm giá
+    private long totalNotificationsToday; // Tổng số thông báo được tạo trong ngày hiện tại
+    private long totalOrdersToday;       // Tổng số đơn hàng được tạo trong ngày hiện tại
 
     // Constructor
     public StatsDTO(
@@ -27,7 +29,9 @@ public class StatsDTO {
             long totalBrands,
             long totalSuppliers,
             long totalShippingMethods,
-            long totalCoupons) {
+            long totalCoupons,
+            long totalNotificationsToday,
+            long totalOrdersToday) {
         this.totalProducts = totalProducts;
         this.totalVariants = totalVariants;
         this.totalUsers = totalUsers;
@@ -40,6 +44,8 @@ public class StatsDTO {
         this.totalSuppliers = totalSuppliers;
         this.totalShippingMethods = totalShippingMethods;
         this.totalCoupons = totalCoupons;
+        this.totalNotificationsToday = totalNotificationsToday;
+        this.totalOrdersToday = totalOrdersToday;
     }
 
     // Getters và Setters
@@ -137,5 +143,21 @@ public class StatsDTO {
 
     public void setTotalCoupons(long totalCoupons) {
         this.totalCoupons = totalCoupons;
+    }
+
+    public long getTotalNotificationsToday() {
+        return totalNotificationsToday;
+    }
+
+    public void setTotalNotificationsToday(long totalNotificationsToday) {
+        this.totalNotificationsToday = totalNotificationsToday;
+    }
+
+    public long getTotalOrdersToday() {
+        return totalOrdersToday;
+    }
+
+    public void setTotalOrdersToday(long totalOrdersToday) {
+        this.totalOrdersToday = totalOrdersToday;
     }
 }

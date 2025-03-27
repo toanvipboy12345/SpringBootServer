@@ -5,6 +5,10 @@ import com.ecommerce.Ecommerce.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 @Service
 public class StatsService {
 
@@ -18,6 +22,7 @@ public class StatsService {
     private final SupplierRepository supplierRepository;
     private final ShippingMethodRepository shippingMethodRepository;
     private final CouponRepository couponRepository;
+    private final NotificationRepository notificationRepository; // Thêm NotificationRepository
 
     @Autowired
     public StatsService(
@@ -30,7 +35,8 @@ public class StatsService {
             BrandRepository brandRepository,
             SupplierRepository supplierRepository,
             ShippingMethodRepository shippingMethodRepository,
-            CouponRepository couponRepository) {
+            CouponRepository couponRepository,
+            NotificationRepository notificationRepository) {
         this.productRepository = productRepository;
         this.productVariantRepository = productVariantRepository;
         this.userRepository = userRepository;
@@ -41,9 +47,16 @@ public class StatsService {
         this.supplierRepository = supplierRepository;
         this.shippingMethodRepository = shippingMethodRepository;
         this.couponRepository = couponRepository;
+        this.notificationRepository = notificationRepository;
     }
 
     public StatsDTO getStats() {
+        // Lấy ngày hiện tại
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+
+        // Các thống kê hiện có
         long totalProducts = productRepository != null ? productRepository.count() : 0;
         long totalVariants = productVariantRepository != null ? productVariantRepository.count() : 0;
         long totalUsers = userRepository != null ? userRepository.count() : 0;
@@ -57,6 +70,14 @@ public class StatsService {
         long totalShippingMethods = shippingMethodRepository != null ? shippingMethodRepository.count() : 0;
         long totalCoupons = couponRepository != null ? couponRepository.count() : 0;
 
+        // Thống kê mới: Số lượng thông báo và đơn hàng trong ngày hiện tại
+        long totalNotificationsToday = notificationRepository != null
+                ? notificationRepository.countByCreatedAtBetween(startOfDay, endOfDay)
+                : 0;
+        long totalOrdersToday = orderRepository != null
+                ? orderRepository.countByCreatedAtBetween(startOfDay, endOfDay)
+                : 0;
+
         return new StatsDTO(
                 totalProducts,
                 totalVariants,
@@ -69,7 +90,9 @@ public class StatsService {
                 totalBrands,
                 totalSuppliers,
                 totalShippingMethods,
-                totalCoupons
+                totalCoupons,
+                totalNotificationsToday,
+                totalOrdersToday
         );
     }
 }

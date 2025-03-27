@@ -96,4 +96,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     "LIMIT 10")
 List<Object[]> findTopVariantsByRevenue(@Param("startDate") LocalDateTime startDate,
                                      @Param("endDate") LocalDateTime endDate);
+       // Đếm số lượng đơn hàng được tạo trong khoảng thời gian
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.createdAt >= :start AND o.createdAt < :end")
+    long countByCreatedAtBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }
