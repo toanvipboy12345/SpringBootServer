@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/shipping-methods")
@@ -16,28 +18,34 @@ public class ShippingMethodController {
     private ShippingMethodService shippingMethodService;
 
     // Thêm đơn vị vận chuyển
-    @PostMapping("/manage")
+    @PostMapping
     public ResponseEntity<ShippingMethod> createShippingMethod(@RequestBody ShippingMethod shippingMethod) {
         ShippingMethod createdShippingMethod = shippingMethodService.createShippingMethod(shippingMethod);
         return ResponseEntity.ok(createdShippingMethod);
     }
 
     // Cập nhật đơn vị vận chuyển
-    @PutMapping("/manage/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<ShippingMethod> updateShippingMethod(@PathVariable Long id, @RequestBody ShippingMethod shippingMethod) {
         ShippingMethod updatedShippingMethod = shippingMethodService.updateShippingMethod(id, shippingMethod);
         return ResponseEntity.ok(updatedShippingMethod);
     }
 
     // Xóa đơn vị vận chuyển
-    @DeleteMapping("/manage/{id}")
-    public ResponseEntity<Void> deleteShippingMethod(@PathVariable Long id) {
-        shippingMethodService.deleteShippingMethod(id);
-        return ResponseEntity.ok().build();
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteShippingMethod(@PathVariable Long id) {
+        try {
+            shippingMethodService.deleteShippingMethod(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Đã xóa đơn vị vận chuyển thành công");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(Map.of("error", "Không tìm thấy đơn vị vận chuyển với id: " + id));
+        }
     }
 
     // Lấy danh sách đơn vị vận chuyển
-    @GetMapping("/manage")
+    @GetMapping
     public ResponseEntity<List<ShippingMethod>> getAllShippingMethods() {
         List<ShippingMethod> shippingMethods = shippingMethodService.getAllShippingMethods();
         return ResponseEntity.ok(shippingMethods);

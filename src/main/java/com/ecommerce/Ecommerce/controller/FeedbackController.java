@@ -9,7 +9,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,9 +32,14 @@ public class FeedbackController {
         private List<String> images;
         private LocalDateTime createdAt;
         private Double averageRating; // Rating trung bình của sản phẩm
+        private Integer totalFeedbacks; // Tổng số đánh giá
+        private Integer satisfiedCustomers; // Số khách hàng hài lòng (4 sao trở lên)
+        private Map<String, Integer> ratingDistribution; // Phân phối tỷ lệ phần trăm theo mức sao
 
         // Constructor
-        public FeedbackResponseDTO(Long id, Long userId, String fullName, Long productId, Integer rating, String comment, List<String> images, LocalDateTime createdAt, Double averageRating) {
+        public FeedbackResponseDTO(Long id, Long userId, String fullName, Long productId, Integer rating, 
+                String comment, List<String> images, LocalDateTime createdAt, Double averageRating, 
+                Integer totalFeedbacks, Integer satisfiedCustomers, Map<String, Integer> ratingDistribution) {
             this.id = id;
             this.userId = userId;
             this.fullName = fullName;
@@ -42,6 +49,9 @@ public class FeedbackController {
             this.images = images;
             this.createdAt = createdAt;
             this.averageRating = averageRating;
+            this.totalFeedbacks = totalFeedbacks;
+            this.satisfiedCustomers = satisfiedCustomers;
+            this.ratingDistribution = ratingDistribution;
         }
 
         // Getters và Setters
@@ -63,6 +73,12 @@ public class FeedbackController {
         public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
         public Double getAverageRating() { return averageRating; }
         public void setAverageRating(Double averageRating) { this.averageRating = averageRating; }
+        public Integer getTotalFeedbacks() { return totalFeedbacks; }
+        public void setTotalFeedbacks(Integer totalFeedbacks) { this.totalFeedbacks = totalFeedbacks; }
+        public Integer getSatisfiedCustomers() { return satisfiedCustomers; }
+        public void setSatisfiedCustomers(Integer satisfiedCustomers) { this.satisfiedCustomers = satisfiedCustomers; }
+        public Map<String, Integer> getRatingDistribution() { return ratingDistribution; }
+        public void setRatingDistribution(Map<String, Integer> ratingDistribution) { this.ratingDistribution = ratingDistribution; }
     }
 
     @PostMapping("/add")
@@ -80,12 +96,37 @@ public class FeedbackController {
     public ResponseEntity<List<FeedbackResponseDTO>> getFeedbacks(@PathVariable Long productId) {
         List<Feedback> feedbacks = feedbackService.getFeedbacksByProductId(productId);
 
+        // Tính tổng số đánh giá
+        int totalFeedbacks = feedbacks.size();
+
         // Tính rating trung bình
         double averageRating = feedbacks.isEmpty() ? 0.0 :
                 feedbacks.stream()
                         .mapToInt(Feedback::getRating)
                         .average()
                         .orElse(0.0);
+
+        // Tính số khách hàng hài lòng (4 sao trở lên)
+        long satisfiedCustomers = feedbacks.stream()
+                .filter(fb -> fb.getRating() >= 4)
+                .count();
+
+        // Tính phân phối tỷ lệ phần trăm theo mức sao
+        Map<String, Integer> ratingDistribution = new HashMap<>();
+        ratingDistribution.put("5", 0);
+        ratingDistribution.put("4", 0);
+        ratingDistribution.put("3", 0);
+        ratingDistribution.put("2", 0);
+        ratingDistribution.put("1", 0);
+
+        if (totalFeedbacks > 0) {
+            for (Feedback fb : feedbacks) {
+                String ratingKey = String.valueOf(fb.getRating());
+                ratingDistribution.put(ratingKey, ratingDistribution.get(ratingKey) + 1);
+            }
+            // Chuyển đổi thành phần trăm
+            ratingDistribution.replaceAll((key, count) -> (int) Math.round((count * 100.0) / totalFeedbacks));
+        }
 
         // Chuyển đổi sang DTO
         List<FeedbackResponseDTO> feedbackDTOs = feedbacks.stream()
@@ -99,7 +140,10 @@ public class FeedbackController {
                         fb.getComment(),
                         fb.getImages(),
                         fb.getCreatedAt(),
-                        averageRating
+                        averageRating,
+                        totalFeedbacks,
+                        (int) satisfiedCustomers,
+                        ratingDistribution
                 ))
                 .collect(Collectors.toList());
 

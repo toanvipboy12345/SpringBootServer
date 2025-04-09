@@ -19,6 +19,7 @@ import jakarta.persistence.criteria.Join;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,14 +38,13 @@ public class ProductDtoService {
     @Autowired
     private ProductVariantRepository productVariantRepository;
 
-    public List<ProductCardDTO> getProductCards(int page, int size, String category, String brand, Double priceMin, Double priceMax, String sort) {
+    public List<ProductCardDTO> getProductCards(int page, int size, String category, String brand, Double priceMin, Double priceMax, String sort, boolean hasDiscount) {
         Pageable pageable = PageRequest.of(page, size);
 
         Specification<ProductVariant> spec = new Specification<ProductVariant>() {
             @Override
             public Predicate toPredicate(Root<ProductVariant> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
                 List<Predicate> predicates = new ArrayList<>();
-
                 Join<ProductVariant, Product> productJoin = root.join("product");
 
                 if (category != null && !category.isEmpty()) {
@@ -66,14 +66,17 @@ public class ProductDtoService {
                     predicates.add(cb.lessThanOrEqualTo(productJoin.get("price"), priceMax));
                 }
 
-                // Thêm sắp xếp vào query
+                if (hasDiscount) {
+                    predicates.add(cb.greaterThan(productJoin.get("discountRate"), 0));
+                }
+
                 if ("price_asc".equals(sort)) {
                     query.orderBy(cb.asc(productJoin.get("price")));
                 } else if ("price_desc".equals(sort)) {
                     query.orderBy(cb.desc(productJoin.get("price")));
-                } else if ("created_at_asc".equals(sort)) { // Sắp xếp theo thời gian tạo của Product (tăng dần)
+                } else if ("created_at_asc".equals(sort)) {
                     query.orderBy(cb.asc(productJoin.get("createdAt")));
-                } else if ("created_at_desc".equals(sort)) { // Sắp xếp theo thời gian tạo của Product (giảm dần)
+                } else if ("created_at_desc".equals(sort)) {
                     query.orderBy(cb.desc(productJoin.get("createdAt")));
                 }
 
@@ -83,13 +86,11 @@ public class ProductDtoService {
 
         Page<ProductVariant> variants = productVariantRepository.findAll(spec, pageable);
 
-        // Chuyển đổi sang ProductCardDTO, bao gồm createdAt từ Product
         return variants.stream()
                 .map(variant -> {
                     Product product = variant.getProduct();
-                    // Chuyển đổi LocalDateTime của createdAt từ Product (Auditable) thành Long (timestamp)
                     Long createdAtTimestamp = product.getCreatedAt() != null 
-                        ? product.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() // Sử dụng atZone và toEpochMilli
+                        ? product.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                         : null;
                     return new ProductCardDTO(
                             product.getId(),
@@ -100,14 +101,12 @@ public class ProductDtoService {
                             product.getDiscountPrice(),
                             product.getDiscountRate(),
                             variant.getMainImage(),
-                            createdAtTimestamp // Sử dụng createdAt từ Product
+                            createdAtTimestamp
                     );
                 })
                 .collect(Collectors.toList());
     }
-    
 
-    // Phương thức getProductDetail không thay đổi (nếu không cần thêm createdAt)
     public ProductDetailDTO getProductDetail(Long productId, Long variantId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -164,9 +163,10 @@ public class ProductDtoService {
                 variantDetails
         );
     }
+
     public List<ProductCardDTO> searchProductCards(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return new ArrayList<>(); // Trả về danh sách rỗng nếu không có từ khóa
+            return new ArrayList<>();
         }
 
         Specification<ProductVariant> spec = new Specification<ProductVariant>() {
@@ -175,7 +175,6 @@ public class ProductDtoService {
                 List<Predicate> predicates = new ArrayList<>();
                 Join<ProductVariant, Product> productJoin = root.join("product");
 
-                // Tìm kiếm trong tên sản phẩm hoặc mã sản phẩm (không phân biệt hoa thường)
                 String likePattern = "%" + keyword.toLowerCase() + "%";
                 predicates.add(cb.or(
                         cb.like(cb.lower(productJoin.get("name")), likePattern),
@@ -188,7 +187,6 @@ public class ProductDtoService {
 
         List<ProductVariant> variants = productVariantRepository.findAll(spec);
 
-        // Chuyển đổi sang ProductCardDTO
         return variants.stream()
                 .map(variant -> {
                     Product product = variant.getProduct();
@@ -209,5 +207,93 @@ public class ProductDtoService {
                 })
                 .collect(Collectors.toList());
     }
-    
+
+    public List<ProductCardDTO> getRandomProductsByBrand(int limitPerBrand) {
+        List<Brand> allBrands = brandRepository.findAll();
+        List<ProductCardDTO> result = new ArrayList<>();
+
+        for (Brand brand : allBrands) {
+            Specification<ProductVariant> spec = new Specification<ProductVariant>() {
+                @Override
+                public Predicate toPredicate(Root<ProductVariant> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+                    Join<ProductVariant, Product> productJoin = root.join("product");
+                    return cb.equal(productJoin.get("brandId"), brand.getId());
+                }
+            };
+
+            List<ProductVariant> variants = productVariantRepository.findAll(spec);
+            Collections.shuffle(variants);
+
+            List<ProductVariant> limitedVariants = variants.stream()
+                    .limit(limitPerBrand)
+                    .collect(Collectors.toList());
+
+            List<ProductCardDTO> dtos = limitedVariants.stream()
+                    .map(variant -> {
+                        Product product = variant.getProduct();
+                        Long createdAtTimestamp = product.getCreatedAt() != null
+                                ? product.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                                : null;
+                        return new ProductCardDTO(
+                                product.getId(),
+                                variant.getId(),
+                                product.getCode(),
+                                product.getName() + " - " + variant.getColor(),
+                                product.getPrice(),
+                                product.getDiscountPrice(),
+                                product.getDiscountRate(),
+                                variant.getMainImage(),
+                                createdAtTimestamp
+                        );
+                    })
+                    .collect(Collectors.toList());
+
+            result.addAll(dtos);
+        }
+
+        return result;
+    }
+
+    // Phương thức mới: Lấy 10 sản phẩm có mức giảm giá sâu nhất
+    public List<ProductCardDTO> getTopDiscountedProducts(int limit) {
+        Specification<ProductVariant> spec = new Specification<ProductVariant>() {
+            @Override
+            public Predicate toPredicate(Root<ProductVariant> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+                List<Predicate> predicates = new ArrayList<>();
+                Join<ProductVariant, Product> productJoin = root.join("product");
+
+                // Chỉ lấy các sản phẩm có discountRate > 0
+                predicates.add(cb.greaterThan(productJoin.get("discountRate"), 0));
+
+                // Sắp xếp theo discountRate giảm dần
+                query.orderBy(cb.desc(productJoin.get("discountRate")));
+
+                return cb.and(predicates.toArray(new Predicate[0]));
+            }
+        };
+
+        // Lấy tối đa 10 sản phẩm
+        Pageable pageable = PageRequest.of(0, limit);
+        List<ProductVariant> variants = productVariantRepository.findAll(spec, pageable).getContent();
+
+        return variants.stream()
+                .map(variant -> {
+                    Product product = variant.getProduct();
+                    Long createdAtTimestamp = product.getCreatedAt() != null
+                            ? product.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                            : null;
+                    return new ProductCardDTO(
+                            product.getId(),
+                            variant.getId(),
+                            product.getCode(),
+                            product.getName() + " - " + variant.getColor(),
+                            product.getPrice(),
+                            product.getDiscountPrice(),
+                            product.getDiscountRate(),
+                            variant.getMainImage(),
+                            createdAtTimestamp
+                    );
+                })
+                .collect(Collectors.toList());
+    }
 }

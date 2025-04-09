@@ -31,6 +31,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUserId(Long userId);
     List<Order> findByCartToken(String cartToken);
     long count();
+    List<Order> findByPhoneNumber(String phoneNumber);
 
     // Lấy danh sách đơn hàng có trạng thái DELIVERED trong khoảng thời gian
     List<Order> findByStatusAndCreatedAtBetween(OrderStatus status, LocalDateTime startDate, LocalDateTime endDate);

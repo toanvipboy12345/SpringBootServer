@@ -2,7 +2,6 @@ package com.ecommerce.Ecommerce.service;
 
 import com.ecommerce.Ecommerce.exception.InvalidInputException;
 import com.ecommerce.Ecommerce.model.ShippingMethod;
-import com.ecommerce.Ecommerce.model.ShippingMethodStatus;
 import com.ecommerce.Ecommerce.repository.ShippingMethodRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,6 @@ public class ShippingMethodService {
         if (shippingMethodRepository.findByCode(shippingMethod.getCode()).isPresent()) {
             throw new InvalidInputException("Shipping method code already exists: " + shippingMethod.getCode());
         }
-        shippingMethod.setStatus(ShippingMethodStatus.ACTIVE); // Mặc định là ACTIVE
         return shippingMethodRepository.save(shippingMethod);
     }
 
@@ -38,12 +36,11 @@ public class ShippingMethodService {
         return shippingMethodRepository.save(shippingMethod);
     }
 
-    // Xóa đơn vị vận chuyển (đặt status = INACTIVE)
+    // Xóa đơn vị vận chuyển (xóa cứng - hard delete)
     public void deleteShippingMethod(Long id) {
         ShippingMethod shippingMethod = shippingMethodRepository.findById(id)
                 .orElseThrow(() -> new InvalidInputException("Shipping method not found with id: " + id));
-        shippingMethod.setStatus(ShippingMethodStatus.INACTIVE);
-        shippingMethodRepository.save(shippingMethod);
+        shippingMethodRepository.delete(shippingMethod); // Xóa bản ghi khỏi cơ sở dữ liệu
     }
 
     // Lấy danh sách đơn vị vận chuyển

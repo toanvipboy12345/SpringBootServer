@@ -349,6 +349,8 @@ public class OrderService {
 
     @Autowired
     private CouponService couponService;
+    @Autowired
+    private PaymentRepository paymentRepository; // T
 
     public List<InvoiceDTO> getAllOrders() {
         return orderRepository.findAll().stream()
@@ -357,9 +359,9 @@ public class OrderService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Order createOrder(String orderId, Long userId, CartDTO cartDTO, Address shippingAddress, 
-                             String shippingMethodCode, String couponCode, String email, 
-                             String customerName, String phoneNumber) {
+    public Order createOrder(String orderId, Long userId, CartDTO cartDTO, Address shippingAddress,
+            String shippingMethodCode, String couponCode, String email,
+            String customerName, String phoneNumber) {
         System.out.println("Creating Order for orderId: " + orderId);
 
         if (orderRepository.findByOrderId(orderId).isPresent()) {
@@ -367,7 +369,8 @@ public class OrderService {
         }
 
         if (shippingAddress == null || shippingAddress.getStreet() == null || shippingAddress.getWard() == null ||
-            shippingAddress.getDistrict() == null || shippingAddress.getCity() == null || shippingAddress.getCountry() == null) {
+                shippingAddress.getDistrict() == null || shippingAddress.getCity() == null
+                || shippingAddress.getCountry() == null) {
             throw new InvalidInputException("Shipping address is incomplete for orderId: " + orderId);
         }
 
@@ -392,7 +395,8 @@ public class OrderService {
         ShippingMethod shippingMethod = null;
         if (shippingMethodCode != null && !shippingMethodCode.trim().isEmpty()) {
             shippingMethod = shippingMethodRepository.findByCode(shippingMethodCode)
-                    .orElseThrow(() -> new InvalidInputException("Shipping method not found with code: " + shippingMethodCode));
+                    .orElseThrow(() -> new InvalidInputException(
+                            "Shipping method not found with code: " + shippingMethodCode));
             if (shippingMethod.getStatus() != ShippingMethodStatus.ACTIVE) {
                 throw new InvalidInputException("Shipping method is inactive: " + shippingMethodCode);
             }
@@ -417,7 +421,8 @@ public class OrderService {
                         .anyMatch(item -> item.getDiscountPrice() > 0);
 
                 if (hasDiscountedProducts && !appliedCoupon.isApplicableToDiscountedProducts()) {
-                    throw new InvalidInputException("Coupon " + couponCode + " cannot be applied to discounted products");
+                    throw new InvalidInputException(
+                            "Coupon " + couponCode + " cannot be applied to discounted products");
                 }
 
                 double discountAmount = (cartTotal * discountRate) / 100;
@@ -440,8 +445,8 @@ public class OrderService {
             }
         }
 
-        Order order = new Order(orderId, user, cartDTO.getCartToken(), discountedTotal, shippingAddress, 
-                                shippingMethod, email, customerName, phoneNumber);
+        Order order = new Order(orderId, user, cartDTO.getCartToken(), discountedTotal, shippingAddress,
+                shippingMethod, email, customerName, phoneNumber);
         order.setStatus(OrderStatus.PENDING);
         order.setCouponApplied(couponApplied);
 
@@ -449,26 +454,28 @@ public class OrderService {
 
         for (CartDTO.CartItemDTO cartItemDTO : cartDTO.getItems()) {
             Product product = productRepository.findById(cartItemDTO.getProductId())
-                    .orElseThrow(() -> new InvalidInputException("Product not found with id: " + cartItemDTO.getProductId()));
+                    .orElseThrow(() -> new InvalidInputException(
+                            "Product not found with id: " + cartItemDTO.getProductId()));
             ProductVariant variant = productVariantRepository.findById(cartItemDTO.getVariant().getId())
-                    .orElseThrow(() -> new InvalidInputException("Variant not found with id: " + cartItemDTO.getVariant().getId()));
+                    .orElseThrow(() -> new InvalidInputException(
+                            "Variant not found with id: " + cartItemDTO.getVariant().getId()));
             VariantSize size = variantSizeRepository.findById(cartItemDTO.getSizeId())
                     .orElseThrow(() -> new InvalidInputException("Size not found with id: " + cartItemDTO.getSizeId()));
 
             if (size.getQuantity() < cartItemDTO.getQuantity()) {
-                throw new InvalidInputException("Insufficient stock for variant: " + cartItemDTO.getVariant().getId() + ", size: " + cartItemDTO.getSize());
+                throw new InvalidInputException("Insufficient stock for variant: " + cartItemDTO.getVariant().getId()
+                        + ", size: " + cartItemDTO.getSize());
             }
 
             double price = cartItemDTO.getDiscountPrice() > 0 ? cartItemDTO.getDiscountPrice() : cartItemDTO.getPrice();
 
             OrderItem orderItem = new OrderItem(
-                savedOrder,
-                product,
-                variant,
-                size,
-                cartItemDTO.getQuantity(),
-                price
-            );
+                    savedOrder,
+                    product,
+                    variant,
+                    size,
+                    cartItemDTO.getQuantity(),
+                    price);
             orderItemRepository.save(orderItem);
         }
 
@@ -509,13 +516,17 @@ public class OrderService {
                 List<Coupon> coupons = couponService.getAllCoupons().stream()
                         .filter(coupon -> coupon.getStatus() == CouponStatus.ACTIVE)
                         .filter(coupon -> {
-                            double discountAmount = (order.getItems().stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum() * coupon.getDiscountRate()) / 100;
+                            double discountAmount = (order.getItems().stream()
+                                    .mapToDouble(item -> item.getPrice() * item.getQuantity()).sum()
+                                    * coupon.getDiscountRate()) / 100;
                             // Áp dụng maxDiscountAmount trong kiểm tra
                             Double maxDiscountAmount = coupon.getMaxDiscountAmount();
                             if (maxDiscountAmount != null && discountAmount > maxDiscountAmount) {
                                 discountAmount = maxDiscountAmount;
                             }
-                            double expectedDiscountedTotal = order.getItems().stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum() + order.getShippingMethod().getShippingFee() - discountAmount;
+                            double expectedDiscountedTotal = order.getItems().stream()
+                                    .mapToDouble(item -> item.getPrice() * item.getQuantity()).sum()
+                                    + order.getShippingMethod().getShippingFee() - discountAmount;
                             return Math.abs(expectedDiscountedTotal - order.getTotalAmount()) < 0.01;
                         })
                         .toList();
@@ -523,7 +534,8 @@ public class OrderService {
                     Coupon coupon = coupons.get(0);
                     try {
                         couponService.incrementUsedCount(coupon, null);
-                        System.out.println("Increased usedCount for coupon " + coupon.getCode() + " to " + coupon.getUsedCount());
+                        System.out.println(
+                                "Increased usedCount for coupon " + coupon.getCode() + " to " + coupon.getUsedCount());
                     } catch (InvalidInputException e) {
                         System.out.println("Failed to update usedCount: " + e.getMessage());
                     }
@@ -534,6 +546,14 @@ public class OrderService {
         }
 
         order.setStatus(status);
+        if (status == OrderStatus.DELIVERED && order.getPayment() != null) {
+            Payment payment = order.getPayment();
+            if (payment.getStatus() == PaymentStatus.PENDING) {
+                payment.setStatus(PaymentStatus.SUCCESS);
+                paymentRepository.save(payment); // Lưu thay đổi trạng thái thanh toán
+                System.out.println("Payment status updated to SUCCESS for orderId: " + orderId);
+            }
+        }
         Order updatedOrder = orderRepository.save(order);
         return mapToInvoiceDTO(updatedOrder);
     }
@@ -581,48 +601,56 @@ public class OrderService {
         PaymentStatus paymentStatus = (payment != null) ? payment.getStatus() : null;
 
         AddressDTO shippingAddressDTO = new AddressDTO(
-            order.getShippingAddress().getStreet(),
-            order.getShippingAddress().getWard(),
-            order.getShippingAddress().getDistrict(),
-            order.getShippingAddress().getCity(),
-            order.getShippingAddress().getCountry()
-        );
+                order.getShippingAddress().getStreet(),
+                order.getShippingAddress().getWard(),
+                order.getShippingAddress().getDistrict(),
+                order.getShippingAddress().getCity(),
+                order.getShippingAddress().getCountry());
 
         List<InvoiceItemDTO> items = order.getItems().stream().map(item -> {
             return new InvoiceItemDTO(
-                item.getProduct().getId(),
-                item.getProduct().getName(),
-                item.getVariant().getColor(),
-                item.getSize().getSize(),
-                item.getQuantity(),
-                item.getPrice(),
-                item.getVariant().getMainImage() // Thêm mainImage từ ProductVariant
+                    item.getProduct().getId(),
+                    item.getProduct().getName(),
+                    item.getVariant().getColor(),
+                    item.getSize().getSize(),
+                    item.getQuantity(),
+                    item.getPrice(),
+                    item.getVariant().getMainImage() // Thêm mainImage từ ProductVariant
             );
         }).collect(Collectors.toList());
 
-        String customerIdentifier = order.getCartToken() != null ? order.getCartToken() 
+        String customerIdentifier = order.getCartToken() != null ? order.getCartToken()
                 : (order.getUser() != null ? order.getUser().getId().toString() : null);
 
         InvoiceDTO invoiceDTO = new InvoiceDTO(
-            order.getOrderId(),
-            customerIdentifier,
-            order.getCustomerName(),
-            order.getEmail(),
-            order.getPhoneNumber(),
-            shippingAddressDTO,
-            order.getShippingMethod().getName(),
-            order.getTotalAmount(),
-            order.getShippingMethod().getShippingFee(),
-            paymentMethod,
-            paymentStatus,
-            order.getStatus(),
-            items
-        );
+                order.getOrderId(),
+                customerIdentifier,
+                order.getCustomerName(),
+                order.getEmail(),
+                order.getPhoneNumber(),
+                shippingAddressDTO,
+                order.getShippingMethod().getName(),
+                order.getTotalAmount(),
+                order.getShippingMethod().getShippingFee(),
+                paymentMethod,
+                paymentStatus,
+                order.getStatus(),
+                items);
 
         // Gán createdAt và updatedAt từ Order (do InvoiceDTO extends Auditable)
         invoiceDTO.setCreatedAt(order.getCreatedAt());
         invoiceDTO.setUpdatedAt(order.getUpdatedAt());
 
         return invoiceDTO;
+    }
+
+    // tra cứu đơn hàng
+    public List<InvoiceDTO> getOrdersByPhoneNumber(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+            throw new InvalidInputException("Phone number is required");
+        }
+        return orderRepository.findByPhoneNumber(phoneNumber).stream()
+                .map(this::mapToInvoiceDTO)
+                .collect(Collectors.toList());
     }
 }

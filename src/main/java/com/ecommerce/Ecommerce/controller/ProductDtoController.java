@@ -17,8 +17,10 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.persistence.criteria.*;
 
 import java.util.ArrayList;
-import java.util.Collections; // Thêm import này
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/product-dto")
@@ -44,7 +46,8 @@ public class ProductDtoController {
             @RequestParam(required = false) String brand,
             @RequestParam(required = false) Double priceMin,
             @RequestParam(required = false) Double priceMax,
-            @RequestParam(required = false, defaultValue = "") String sort) {
+            @RequestParam(required = false, defaultValue = "") String sort,
+            @RequestParam(required = false, defaultValue = "false") boolean hasDiscount) {
 
         Pageable pageable = PageRequest.of(page, size);
 
@@ -73,21 +76,19 @@ public class ProductDtoController {
                     predicates.add(cb.lessThanOrEqualTo(productJoin.get("price"), priceMax));
                 }
 
-                // Không áp dụng sắp xếp ở đây, để service xử lý theo logic hiện tại
+                if (hasDiscount) {
+                    predicates.add(cb.greaterThan(productJoin.get("discountRate"), 0));
+                }
+
                 return cb.and(predicates.toArray(new Predicate[0]));
             }
         };
 
         Page<ProductVariant> variants = productVariantRepository.findAll(spec, pageable);
-
-        // Gọi service để lấy danh sách DTO (vẫn giữ logic sắp xếp trong service)
-        List<ProductCardDTO> dtos = productDtoService.getProductCards(page, size, category, brand, priceMin, priceMax, sort);
-
-        // Trộn ngẫu nhiên danh sách DTO
+        List<ProductCardDTO> dtos = productDtoService.getProductCards(page, size, category, brand, priceMin, priceMax, sort, hasDiscount);
         Collections.shuffle(dtos);
 
         ProductCardResponseDTO response = new ProductCardResponseDTO(dtos, variants.getTotalElements());
-
         return ResponseEntity.ok(response);
     }
 
@@ -104,5 +105,18 @@ public class ProductDtoController {
             @RequestParam String keyword) {
         List<ProductCardDTO> dtos = productDtoService.searchProductCards(keyword);
         return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/random-by-brand")
+    public ResponseEntity<List<ProductCardDTO>> getRandomProductsByBrand() {
+        List<ProductCardDTO> result = productDtoService.getRandomProductsByBrand(5);
+        return ResponseEntity.ok(result);
+    }
+
+    // Endpoint mới: Lấy 10 sản phẩm có mức giảm giá sâu nhất
+    @GetMapping("/top-discounted")
+    public ResponseEntity<List<ProductCardDTO>> getTopDiscountedProducts() {
+        List<ProductCardDTO> result = productDtoService.getTopDiscountedProducts(10); // Lấy 10 sản phẩm
+        return ResponseEntity.ok(result);
     }
 }
