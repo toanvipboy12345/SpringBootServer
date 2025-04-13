@@ -22,4 +22,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'admin'")
     long countByRoleAdmin(); // Đếm user có role = "admin"
+    Optional<User> findByPhone(String phone); // Thêm dòng này
 }

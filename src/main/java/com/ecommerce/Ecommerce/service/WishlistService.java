@@ -93,4 +93,11 @@ public class WishlistService {
             );
         }).collect(Collectors.toList());
     }
+
+    // Xóa một sản phẩm khỏi wishlist
+    public void deleteWishlistItem(Long id) {
+        Wishlist wishlist = wishlistRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Wishlist item not found"));
+        wishlistRepository.delete(wishlist);
+    }
 }

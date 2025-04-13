@@ -1,3 +1,4 @@
+
 // package com.ecommerce.Ecommerce.service;
 
 // import com.ecommerce.Ecommerce.model.AdminRole;
@@ -9,6 +10,7 @@
 // import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 // import org.springframework.stereotype.Service;
 
+// import java.util.Arrays;
 // import java.util.HashMap;
 // import java.util.List;
 // import java.util.Map;
@@ -20,8 +22,10 @@
 
 // @Service
 // public class UserService {
+
 //     @Autowired
 //     private AdminRoleRepository adminRoleRepository;
+
 //     @Autowired
 //     private UserRepository userRepository;
 
@@ -103,7 +107,7 @@
 //         return userRepository.findByEmail(email);
 //     }
 
-//     // Đăng ksy user
+//     // Đăng ký user
 //     public User registerUser(User user) {
 //         Map<String, String> errors = validateUserData(user);
 //         if (!errors.isEmpty()) {
@@ -174,19 +178,33 @@
 //         }
 //         userRepository.deleteById(id);
 //     }
+
 //     public List<AdminRole> getAdminRolesByUserId(Long userId) {
 //         return adminRoleRepository.findByUserId(userId);
 //     }
 
-//     // Kiểm tra xem user có vai trò super_admin hoặc product_manager không
-//     public boolean hasRequiredAdminRole(User user) {
+//     /**
+//      * Kiểm tra xem user có một trong các vai trò admin yêu cầu không
+//      * @param user Người dùng cần kiểm tra
+//      * @param requiredRoles Mảng các vai trò admin yêu cầu
+//      * @return true nếu user có ít nhất một vai trò trong requiredRoles, false nếu không
+//      */
+//     public boolean hasRequiredAdminRole(User user, String[] requiredRoles) {
 //         List<AdminRole> adminRoles = getAdminRolesByUserId(user.getId());
-//         return adminRoles.stream().anyMatch(role -> 
-//             role.getAdminRole().equals("super_admin") || role.getAdminRole().equals("product_manager"));
+//         System.out.println("Admin roles for user " + user.getId() + ": " + adminRoles);
+//         boolean hasRole = adminRoles.stream().anyMatch(role -> 
+//             Arrays.asList(requiredRoles).contains(role.getAdminRole()));
+//         System.out.println("Required roles: " + Arrays.toString(requiredRoles));
+//         System.out.println("Has required admin role: " + hasRole);
+//         return hasRole;
 //     }
+
+
+   
 // }
 package com.ecommerce.Ecommerce.service;
 
+import com.ecommerce.Ecommerce.exception.InvalidInputException;
 import com.ecommerce.Ecommerce.model.AdminRole;
 import com.ecommerce.Ecommerce.model.Google;
 import com.ecommerce.Ecommerce.model.User;
@@ -195,6 +213,7 @@ import com.ecommerce.Ecommerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -202,6 +221,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -245,21 +265,16 @@ public class UserService {
             errorMessages.put("lastName", "Họ không được để trống.");
         }
 
-        // In ra errorMessages để kiểm tra
         System.out.println("Error messages: " + errorMessages);
-
-        return errorMessages; // Trả về danh sách lỗi
+        return errorMessages;
     }
 
-    /**
-     * Tạo mới người dùng từ thông tin Google
-     */
     public User createUserFromGoogle(String email, String name, String googleId, String idToken, String accessToken,
             Boolean emailVerified) {
         User newUser = new User();
         newUser.setEmail(email);
         newUser.setFirstName(name);
-        newUser.setRole("user"); // Mặc định gán role "user"
+        newUser.setRole("user");
         newUser.setIsActive(true);
         Google google = new Google();
         google.setGoogleId(googleId);
@@ -267,24 +282,17 @@ public class UserService {
         google.setAccessToken(accessToken);
         google.setEmailVerified(emailVerified);
         newUser.setGoogle(google);
-
-        return userRepository.save(newUser); // Lưu người dùng mới vào CSDL
+        return userRepository.save(newUser);
     }
 
     public Optional<User> getUserByGoogleId(String googleId) {
         return userRepository.findByGoogle_GoogleId(googleId);
     }
 
-    /**
-     * Lấy danh sách tất cả người dùng
-     */
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    /**
-     * Lấy thông tin người dùng theo ID
-     */
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
@@ -292,35 +300,43 @@ public class UserService {
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
-
-    // Đăng ký user
-    public User registerUser(User user) {
+public User registerUser(User user) {
         Map<String, String> errors = validateUserData(user);
+
+        // Kiểm tra trùng email
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            errors.put("email", "Email đã được sử dụng.");
+        }
+
+        // Kiểm tra trùng username
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            errors.put("username", "Tên đăng nhập đã được sử dụng.");
+        }
+
+        // Kiểm tra trùng phone
+        if (user.getPhone() != null && userRepository.findByPhone(user.getPhone()).isPresent()) {
+            errors.put("phone", "Số điện thoại đã được sử dụng.");
+        }
+
         if (!errors.isEmpty()) {
             try {
                 String jsonErrors = new ObjectMapper().writeValueAsString(errors);
-                throw new IllegalArgumentException("Dữ liệu không hợp lệ", new Throwable(jsonErrors));
+                throw new InvalidInputException(jsonErrors);
             } catch (JsonProcessingException e) {
-                // Xử lý lỗi chuyển đổi JSON
                 System.out.println("Error while converting to JSON: " + e.getMessage());
-                throw new IllegalArgumentException("Lỗi khi xử lý thông báo lỗi.");
+                throw new InvalidInputException("Lỗi khi xử lý thông báo lỗi.");
             }
         }
 
-        // Mã hóa mật khẩu trước khi lưu vào cơ sở dữ liệu
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole("user"); // Gán vai trò mặc định
-        user.setIsActive(true); // Kích hoạt tài khoản
-
-        // Lưu người dùng vào cơ sở dữ liệu
+        user.setRole("user");
+        user.setIsActive(true);
         User savedUser = userRepository.save(user);
 
-        // Gửi email thông báo
         emailService.sendEmail(
                 savedUser.getEmail(),
                 "Đăng ký tài khoản thành công",
                 "Chào mừng đến với LITTLEUSA");
-
         return savedUser;
     }
 
@@ -328,9 +344,6 @@ public class UserService {
         return userRepository.findByUsername(username);
     }
 
-    /**
-     * Cập nhật thông tin người dùng
-     */
     public User updateUser(Long id, User updatedUser) {
         return userRepository.findById(id).map(user -> {
             if (updatedUser.getUsername() != null)
@@ -346,18 +359,55 @@ public class UserService {
             if (updatedUser.getAddress() != null)
                 user.setAddress(updatedUser.getAddress());
             if (updatedUser.getPassword() != null)
-                user.setPassword(updatedUser.getPassword()); // Cập nhật mật khẩu
+                user.setPassword(updatedUser.getPassword()); // Mật khẩu đã được mã hóa
             if (updatedUser.getRole() != null)
                 user.setRole(updatedUser.getRole());
             if (updatedUser.getIsActive() != null)
                 user.setIsActive(updatedUser.getIsActive());
-            return userRepository.save(user);
+            User savedUser = userRepository.save(user);
+            // In ra để kiểm tra
+            System.out.println("Đã lưu user id " + savedUser.getId() + " với mật khẩu: " + savedUser.getPassword());
+            return savedUser;
         }).orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại với ID: " + id));
     }
 
     /**
-     * Xóa người dùng theo ID
+     * Tạo admin mới với vai trò chỉ định
      */
+    @Transactional
+    public User createAdmin(User user, List<String> adminRoles) {
+        Map<String, String> errors = validateUserData(user);
+        if (!errors.isEmpty()) {
+            try {
+                String jsonErrors = new ObjectMapper().writeValueAsString(errors);
+                throw new IllegalArgumentException("Dữ liệu không hợp lệ", new Throwable(jsonErrors));
+            } catch (JsonProcessingException e) {
+                throw new IllegalArgumentException("Lỗi khi xử lý thông báo lỗi.");
+            }
+        }
+
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole("admin");
+        user.setIsActive(true);
+        User savedUser = userRepository.save(user);
+
+        if (adminRoles != null && !adminRoles.isEmpty()) {
+            List<AdminRole> roles = adminRoles.stream().map(role -> {
+                AdminRole adminRole = new AdminRole();
+                adminRole.setUserId(savedUser.getId());
+                adminRole.setAdminRole(role);
+                return adminRole;
+            }).collect(Collectors.toList());
+            adminRoleRepository.saveAll(roles);
+        }
+
+        emailService.sendEmail(
+                savedUser.getEmail(),
+                "Tài khoản admin đã được tạo",
+                "Chào mừng bạn đến với hệ thống quản trị LITTLEUSA");
+        return savedUser;
+    }
+
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
             throw new IllegalArgumentException("Người dùng không tồn tại với ID: " + id);
@@ -369,12 +419,6 @@ public class UserService {
         return adminRoleRepository.findByUserId(userId);
     }
 
-    /**
-     * Kiểm tra xem user có một trong các vai trò admin yêu cầu không
-     * @param user Người dùng cần kiểm tra
-     * @param requiredRoles Mảng các vai trò admin yêu cầu
-     * @return true nếu user có ít nhất một vai trò trong requiredRoles, false nếu không
-     */
     public boolean hasRequiredAdminRole(User user, String[] requiredRoles) {
         List<AdminRole> adminRoles = getAdminRolesByUserId(user.getId());
         System.out.println("Admin roles for user " + user.getId() + ": " + adminRoles);
@@ -384,7 +428,4 @@ public class UserService {
         System.out.println("Has required admin role: " + hasRole);
         return hasRole;
     }
-
-
-   
 }

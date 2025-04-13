@@ -81,7 +81,7 @@ public class CategoryService {
     public Category create(Category category) {
         validateCategory(category);
         if (categoryRepository.findByName(category.getName()).isPresent()) {
-            throw new InvalidInputException("Category name already exists: " + category.getName());
+            throw new InvalidInputException("Danh mục đã tồn tại");
         }
         return categoryRepository.save(category);
     }
@@ -89,7 +89,7 @@ public class CategoryService {
         for (Category category : categories) {
             validateCategory(category);
             if (categoryRepository.findByName(category.getName()).isPresent()) {
-                throw new InvalidInputException("Category name already exists: " + category.getName());
+                throw new InvalidInputException("Danh mục đã tồn tại");
             }
         }
         return categoryRepository.saveAll(categories); // Lưu tất cả các danh mục
@@ -109,7 +109,7 @@ public class CategoryService {
         validateCategory(category);
         if (categoryRepository.findByName(category.getName()).isPresent() &&
             !categoryRepository.findById(id).map(Category::getName).get().equals(category.getName())) {
-            throw new InvalidInputException("Category name already exists: " + category.getName());
+            throw new InvalidInputException("Danh mục đã tồn tại");
         }
         return categoryRepository.findById(id).map(existingCategory -> {
             existingCategory.setName(category.getName());

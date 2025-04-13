@@ -52,6 +52,7 @@
 // }
 package com.ecommerce.Ecommerce.controller;
 
+import com.ecommerce.Ecommerce.annotation.RequireAdminRole;
 import com.ecommerce.Ecommerce.exception.InvalidInputException;
 import com.ecommerce.Ecommerce.model.Coupon;
 import com.ecommerce.Ecommerce.service.CouponService;
@@ -81,6 +82,8 @@ public class CouponController {
 
     // Thêm mã giảm giá
     @PostMapping("/manage")
+    @RequireAdminRole(roles = { "super_admin", "marketing_manager" })
+
     public ResponseEntity<Coupon> createCoupon(@RequestBody Coupon coupon) {
         Coupon createdCoupon = couponService.createCoupon(coupon);
         return ResponseEntity.ok(createdCoupon);
@@ -88,6 +91,8 @@ public class CouponController {
 
     // Cập nhật mã giảm giá
     @PutMapping("/manage/{id}")
+    @RequireAdminRole(roles = { "super_admin", "marketing_manager" })
+
     public ResponseEntity<Coupon> updateCoupon(@PathVariable Long id, @RequestBody Coupon coupon) {
         Coupon updatedCoupon = couponService.updateCoupon(id, coupon);
         return ResponseEntity.ok(updatedCoupon);
@@ -95,6 +100,8 @@ public class CouponController {
 
     // Xóa mã giảm giá
     @DeleteMapping("/manage/{id}")
+    @RequireAdminRole(roles = { "super_admin", "marketing_manager" })
+
     public ResponseEntity<Void> deleteCoupon(@PathVariable Long id) {
         couponService.deleteCoupon(id);
         return ResponseEntity.ok().build();

@@ -26,7 +26,6 @@ public class BlogController {
             @RequestPart("blog") BlogDTO blogDTO,
             @RequestPart(value = "thumbnailFile", required = false) MultipartFile thumbnailFile) throws IOException {
         // In log bằng System.out.println
-        System.out.println("Received POST request to /api/blogs");
         System.out.println("BlogDTO: " + blogDTO);
         if (thumbnailFile != null) {
             System.out.println("ThumbnailFile: name=" + thumbnailFile.getOriginalFilename() + ", size=" + thumbnailFile.getSize());

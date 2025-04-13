@@ -33,4 +33,11 @@ public class WishlistController {
         List<WishlistDTO> wishlist = wishlistService.getWishlist(userId, wishlistToken);
         return ResponseEntity.ok(wishlist);
     }
+
+    // Endpoint xóa sản phẩm khỏi wishlist
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteWishlistItem(@RequestParam Long id) {
+        wishlistService.deleteWishlistItem(id);
+        return ResponseEntity.noContent().build();
+    }
 }

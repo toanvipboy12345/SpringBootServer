@@ -19,8 +19,6 @@ import jakarta.persistence.criteria.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/product-dto")
@@ -86,7 +84,11 @@ public class ProductDtoController {
 
         Page<ProductVariant> variants = productVariantRepository.findAll(spec, pageable);
         List<ProductCardDTO> dtos = productDtoService.getProductCards(page, size, category, brand, priceMin, priceMax, sort, hasDiscount);
-        Collections.shuffle(dtos);
+
+        // Chỉ xáo trộn danh sách nếu không có tham số sort
+        if (sort == null || sort.isEmpty()) {
+            Collections.shuffle(dtos);
+        }
 
         ProductCardResponseDTO response = new ProductCardResponseDTO(dtos, variants.getTotalElements());
         return ResponseEntity.ok(response);
@@ -113,10 +115,9 @@ public class ProductDtoController {
         return ResponseEntity.ok(result);
     }
 
-    // Endpoint mới: Lấy 10 sản phẩm có mức giảm giá sâu nhất
     @GetMapping("/top-discounted")
     public ResponseEntity<List<ProductCardDTO>> getTopDiscountedProducts() {
-        List<ProductCardDTO> result = productDtoService.getTopDiscountedProducts(10); // Lấy 10 sản phẩm
+        List<ProductCardDTO> result = productDtoService.getTopDiscountedProducts(10);
         return ResponseEntity.ok(result);
     }
 }

@@ -131,6 +131,8 @@ public class PurchaseOrderController {
     }
 
     @GetMapping("/{id}")
+    @RequireAdminRole
+
     public ResponseEntity<PurchaseOrderDTO> getPurchaseOrderById(@PathVariable Long id) {
         Optional<PurchaseOrderDTO> purchaseOrder = purchaseOrderService.getPurchaseOrderById(id);
         return purchaseOrder.map(ResponseEntity::ok)
@@ -181,6 +183,8 @@ public class PurchaseOrderController {
 
     // Endpoint xuất PDF
     @GetMapping("/{id}/export-pdf")
+    @RequireAdminRole(roles = { "super_admin", "product_manager", "order_manager", "blog_manager","marketing_manager" })
+
     public ResponseEntity<byte[]> exportPurchaseOrderToPdf(@PathVariable Long id) {
         try {
             byte[] pdfBytes = purchaseOrderService.exportPurchaseOrderToPdf(id);

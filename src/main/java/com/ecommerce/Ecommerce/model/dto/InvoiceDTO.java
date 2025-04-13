@@ -1,4 +1,3 @@
-
 package com.ecommerce.Ecommerce.model.dto;
 
 import com.ecommerce.Ecommerce.model.Auditable;
@@ -10,19 +9,20 @@ import java.util.List;
 
 public class InvoiceDTO extends Auditable {
 
-    private String orderId; // Mã đơn hàng (orderId) - định danh duy nhất
-    private String customerIdentifier; // Định danh khách hàng (cartToken hoặc userId dưới dạng chuỗi)
-    private String customerName; // Tên khách hàng
-    private String email; // Email khách hàng
-    private String phoneNumber; // Số điện thoại khách hàng
-    private AddressDTO shippingAddress; // Địa chỉ giao hàng
-    private String shippingMethod; // Phương thức vận chuyển
-    private double totalAmount; // Tổng tiền (lấy trực tiếp từ Order)
-    private double shippingFee; // Phí vận chuyển (lấy trực tiếp từ Order hoặc ShippingMethod)
-    private PaymentMethod paymentMethod; // Phương thức thanh toán
-    private PaymentStatus paymentStatus; // Trạng thái thanh toán
-    private OrderStatus status; // Trạng thái đơn hàng
-    private List<InvoiceItemDTO> items; // Danh sách các mục trong hóa đơn
+    private String orderId;
+    private String customerIdentifier;
+    private String customerName;
+    private String email;
+    private String phoneNumber;
+    private AddressDTO shippingAddress;
+    private String shippingMethod;
+    private double totalAmount;
+    private double shippingFee;
+    private PaymentMethod paymentMethod;
+    private PaymentStatus paymentStatus;
+    private OrderStatus status;
+    private String transactionId; // Thêm trường transactionId
+    private List<InvoiceItemDTO> items;
 
     // Nested DTO cho Address
     public static class AddressDTO {
@@ -59,11 +59,11 @@ public class InvoiceDTO extends Auditable {
     public static class InvoiceItemDTO {
         private Long productId;
         private String productName;
-        private String variantColor; // Màu sắc của biến thể
-        private String size; // Kích thước
-        private Integer quantity; // Số lượng
-        private double price; // Giá cuối cùng của sản phẩm (lấy trực tiếp từ OrderItem.price)
-        private String mainImage; // Thêm trường mainImage của ProductVariant
+        private String variantColor;
+        private String size;
+        private Integer quantity;
+        private double price;
+        private String mainImage;
 
         public InvoiceItemDTO() {}
 
@@ -103,7 +103,7 @@ public class InvoiceDTO extends Auditable {
     public InvoiceDTO(String orderId, String customerIdentifier, String customerName, String email,
                      String phoneNumber, AddressDTO shippingAddress, String shippingMethod, double totalAmount,
                      double shippingFee, PaymentMethod paymentMethod, PaymentStatus paymentStatus, OrderStatus status,
-                     List<InvoiceItemDTO> items) {
+                     String transactionId, List<InvoiceItemDTO> items) {
         super();
         this.orderId = orderId;
         this.customerIdentifier = customerIdentifier;
@@ -117,6 +117,7 @@ public class InvoiceDTO extends Auditable {
         this.paymentMethod = paymentMethod;
         this.paymentStatus = paymentStatus;
         this.status = status;
+        this.transactionId = transactionId; // Khởi tạo transactionId
         this.items = items;
     }
 
@@ -145,6 +146,8 @@ public class InvoiceDTO extends Auditable {
     public void setPaymentStatus(PaymentStatus paymentStatus) { this.paymentStatus = paymentStatus; }
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }
+    public String getTransactionId() { return transactionId; } // Getter cho transactionId
+    public void setTransactionId(String transactionId) { this.transactionId = transactionId; } // Setter cho transactionId
     public List<InvoiceItemDTO> getItems() { return items; }
     public void setItems(List<InvoiceItemDTO> items) { this.items = items; }
 }

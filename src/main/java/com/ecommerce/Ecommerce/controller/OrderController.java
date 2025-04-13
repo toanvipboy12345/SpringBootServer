@@ -119,7 +119,6 @@ public class OrderController {
     }
 
     @PutMapping("/{orderId}/status")
-        @RequireUserRole 
         @RequireAdminRole(roles = {"super_admin", "order_manager"})
     public ResponseEntity<InvoiceDTO> updateOrderStatus(
             @PathVariable String orderId,

@@ -24,7 +24,7 @@ public class StatisticsController {
     private StatisticsService statisticsService;
 
     @GetMapping("/revenue")
-    @RequireAdminRole(roles = { "super_admin", "product_manager", "order_manager" })
+    @RequireAdminRole(roles = { "super_admin", "product_manager", "order_manager", "blog_manager","marketing_manager" })
     public ResponseEntity<List<RevenueDTO>> getRevenue(
             @RequestParam String type,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
@@ -37,7 +37,7 @@ public class StatisticsController {
     }
 
     @GetMapping("/supplier-transactions")
-    @RequireAdminRole(roles = { "super_admin", "product_manager", "order_manager" })
+    @RequireAdminRole(roles = { "super_admin", "product_manager", "order_manager", "blog_manager","marketing_manager" })
     public ResponseEntity<List<SupplierTransactionStatsDTO>> getSupplierTransactionStats(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
@@ -50,7 +50,7 @@ public class StatisticsController {
 
     // Endpoint cho Top 10 sản phẩm có doanh thu cao nhất
     @GetMapping("/top-products")
-    // @RequireAdminRole(roles = { "super_admin", "product_manager", "order_manager" })
+    // @RequireAdminRole(roles = { "super_admin", "product_manager", "order_manager", "blog_manager","marketing_manager" })
     public ResponseEntity<List<TopProductRevenueDTO>> getTopProductsByRevenue(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
@@ -63,7 +63,7 @@ public class StatisticsController {
 
     // Endpoint cho Top 10 biến thể sản phẩm có doanh thu cao nhất
     @GetMapping("/top-variants")
-    // @RequireAdminRole(roles = { "super_admin", "product_manager", "order_manager" })
+    // @RequireAdminRole(roles = { "super_admin", "product_manager", "order_manager", "blog_manager","marketing_manager" })
     public ResponseEntity<List<TopVariantRevenueDTO>> getTopVariantsByRevenue(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
@@ -71,6 +71,19 @@ public class StatisticsController {
         LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
         List<TopVariantRevenueDTO> topVariants = (List<TopVariantRevenueDTO>) statisticsService.getStatistics(
             "topvariants", startDateTime, endDateTime, null);
+        return ResponseEntity.ok(topVariants);
+    }
+
+    // Endpoint mới: Top 10 biến thể sản phẩm có số lượng bán nhiều nhất
+    @GetMapping("/top-variants-quantity")
+    // @RequireAdminRole(roles = { "super_admin", "product_manager", "order_manager" })
+    public ResponseEntity<List<TopVariantRevenueDTO>> getTopVariantsByQuantitySold(
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
+        List<TopVariantRevenueDTO> topVariants = (List<TopVariantRevenueDTO>) statisticsService.getStatistics(
+            "topvariantsquantity", startDateTime, endDateTime, null);
         return ResponseEntity.ok(topVariants);
     }
 }

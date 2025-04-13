@@ -1,6 +1,7 @@
 package com.ecommerce.Ecommerce.repository;
 
 import com.ecommerce.Ecommerce.model.PurchaseOrder;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,16 +12,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository cho thực thể PurchaseOrder, cung cấp các phương thức truy vấn CSDL.
+ */
 @Repository
 public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Long> {
 
     Optional<PurchaseOrder> findByPurchaseOrderCode(String purchaseOrderCode);
+
     boolean existsByPurchaseOrderCode(String purchaseOrderCode);
 
     @Modifying
     @Query("DELETE FROM PurchaseOrder po WHERE po.product.id = :productId")
     void deleteByProductId(Long productId);
+
     long count();
+
     @Query("SELECT po.supplier.id, po.supplier.name, SUM(po.totalAmount) " +
            "FROM PurchaseOrder po " +
            "WHERE po.status = 'COMPLETED' " +
@@ -28,5 +35,6 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
            "GROUP BY po.supplier.id, po.supplier.name")
     List<Object[]> getTotalTransactionAmountBySupplier(@Param("startDate") LocalDateTime startDate, 
                                                        @Param("endDate") LocalDateTime endDate);
-   
+
+    List<PurchaseOrder> findAll(Sort sort);
 }

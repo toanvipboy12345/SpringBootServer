@@ -1,5 +1,6 @@
 package com.ecommerce.Ecommerce.controller;
 
+import com.ecommerce.Ecommerce.annotation.RequireAdminRole;
 import com.ecommerce.Ecommerce.model.Supplier;
 import com.ecommerce.Ecommerce.service.SupplierService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ public class SupplierController {
 
     // Lấy danh sách tất cả nhà cung cấp
     @GetMapping
+
     public ResponseEntity<List<Supplier>> getAllSuppliers() {
         return ResponseEntity.ok(supplierService.getAllSuppliers());
     }
@@ -35,6 +37,8 @@ public class SupplierController {
 
     // Tạo một nhà cung cấp mới (giữ nguyên endpoint cũ)
     @PostMapping
+    @RequireAdminRole(roles = { "super_admin", "product_manager" })
+
     public ResponseEntity<Supplier> createSupplier(@RequestBody Supplier supplier) {
         try {
             Supplier createdSupplier = supplierService.createSupplier(supplier);
@@ -46,6 +50,8 @@ public class SupplierController {
 
     // Tạo nhiều nhà cung cấp cùng lúc (endpoint mới)
     @PostMapping("/bulk")
+    @RequireAdminRole(roles = { "super_admin", "product_manager" })
+
     public ResponseEntity<List<Supplier>> createSuppliers(@RequestBody List<Supplier> suppliers) {
         try {
             List<Supplier> createdSuppliers = supplierService.createSuppliers(suppliers);
@@ -57,6 +63,8 @@ public class SupplierController {
 
     // Cập nhật nhà cung cấp
     @PutMapping("/{id}")
+    @RequireAdminRole(roles = { "super_admin", "product_manager" })
+
     public ResponseEntity<Supplier> updateSupplier(@PathVariable Long id, @RequestBody Supplier supplier) {
         try {
             Supplier updatedSupplier = supplierService.updateSupplier(id, supplier);
@@ -68,6 +76,8 @@ public class SupplierController {
 
     // Xóa nhà cung cấp
     @DeleteMapping("/{id}")
+    @RequireAdminRole(roles = { "super_admin", "product_manager" })
+
     public ResponseEntity<Void> deleteSupplier(@PathVariable Long id) {
         try {
             supplierService.deleteSupplier(id);

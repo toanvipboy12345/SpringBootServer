@@ -839,6 +839,7 @@ public class PaymentService {
             payment.getPaymentMethod(),
             payment.getStatus(),
             order.getStatus(),
+            payment.getTransactionId(), // Gán transactionId từ Payment
             items
         );
 

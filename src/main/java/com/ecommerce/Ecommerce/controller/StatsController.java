@@ -1,5 +1,6 @@
 package com.ecommerce.Ecommerce.controller;
 
+import com.ecommerce.Ecommerce.annotation.RequireAdminRole;
 import com.ecommerce.Ecommerce.model.dto.StatsDTO;
 import com.ecommerce.Ecommerce.service.StatsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,8 @@ public class StatsController {
     }
 
     @GetMapping("/stats")
+        @RequireAdminRole(roles = { "super_admin", "product_manager", "order_manager", "blog_manager","marketing_manager" })
+
     public ResponseEntity<StatsDTO> getStats() {
         StatsDTO stats = statsService.getStats();
         return ResponseEntity.ok(stats);

@@ -1,5 +1,6 @@
 package com.ecommerce.Ecommerce.controller;
 
+import com.ecommerce.Ecommerce.annotation.RequireAdminRole;
 import com.ecommerce.Ecommerce.model.ShippingMethod;
 import com.ecommerce.Ecommerce.service.ShippingMethodService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,8 @@ public class ShippingMethodController {
 
     // Thêm đơn vị vận chuyển
     @PostMapping
+            @RequireAdminRole(roles = {"super_admin", "order_manager"})
+
     public ResponseEntity<ShippingMethod> createShippingMethod(@RequestBody ShippingMethod shippingMethod) {
         ShippingMethod createdShippingMethod = shippingMethodService.createShippingMethod(shippingMethod);
         return ResponseEntity.ok(createdShippingMethod);
@@ -26,6 +29,8 @@ public class ShippingMethodController {
 
     // Cập nhật đơn vị vận chuyển
     @PutMapping("/{id}")
+    @RequireAdminRole(roles = {"super_admin", "order_manager"})
+
     public ResponseEntity<ShippingMethod> updateShippingMethod(@PathVariable Long id, @RequestBody ShippingMethod shippingMethod) {
         ShippingMethod updatedShippingMethod = shippingMethodService.updateShippingMethod(id, shippingMethod);
         return ResponseEntity.ok(updatedShippingMethod);
@@ -33,6 +38,8 @@ public class ShippingMethodController {
 
     // Xóa đơn vị vận chuyển
     @DeleteMapping("/{id}")
+    @RequireAdminRole(roles = {"super_admin", "order_manager"})
+
     public ResponseEntity<Map<String, String>> deleteShippingMethod(@PathVariable Long id) {
         try {
             shippingMethodService.deleteShippingMethod(id);
